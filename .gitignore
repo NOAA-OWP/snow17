@@ -75,3 +75,40 @@ bower_components/
 .grunt/
 src/vendor/
 dist/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Working directories
+alt_prev/
+
+# Temporary Development Notes
+LASTNEXT
+NOTES*
