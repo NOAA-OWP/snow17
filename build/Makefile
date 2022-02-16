@@ -59,24 +59,15 @@ calib_pgf90_2 = $(snow19)
 # PART 2: Define the libraries, driver programs, and executables
 
 # Define the Fortran Compilers
-#FC   = pgf90
-#FC77 = pgf77
+#FC  = pgf90
 #FC  = ifort
-#FC77 = ifort
-FC  = gfortran  # DO NOT USE GFORTRAN UNTIL BUG IS FOUND
-FC77 = gfortran
+FC   = gfortran
 
 # Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
  LOCL_PATH = /usr/local
  LIB = -L$(LOCL_PATH)/lib 
  INC = -I ./
-endif
-
-ifeq "$(FC77)" "pgf77"
- LOCL_PATH = /usr/local
- LIB77 = -L$(LOCL_PATH)/lib 
- INC77 = -I ./
 endif
 
 # Define the driver routine
@@ -108,15 +99,6 @@ ifeq "$(FC)" "pgf90"
   FLAGS2 = -O3 -r8
 endif
 
-ifeq "$(FC77)" "pgf77"
-  FLAGS77 = -O3 -r8
-endif
-ifeq "$(FC77)" "gfortran"
-  FLAGS77 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
-endif
-
-#.SUFFIXES: .f .o .f90
-
 # ----- Compile -----
 
 all: model link clean 
@@ -128,16 +110,12 @@ check:
 
 # compile calibration code
 model:
-	$(FC77) $(FLAGS77) -c $(calib_pgf77) $(INC77)
 	$(FC) $(FLAGS2) -c $(calib_pgf90_2) $(INC)
-	$(FC) $(FLAGS) -c $(calib_pgf90) $(DRIVER) \
-	$(INC)
+	$(FC) $(FLAGS) -c $(calib_pgf90) $(DRIVER) $(INC)
 
 model_debug:
-	$(FC77) $(FLAGS77) -g -fcheck=all -c $(calib_pgf77) $(INC77)
 	$(FC) $(FLAGS2) -g -fcheck=all -c $(calib_pgf90_2) $(INC)
-	$(FC) $(FLAGS) -g -fcheck=all -c $(calib_pgf90) $(DRIVER) \
-	$(INC)
+	$(FC) $(FLAGS) -g -fcheck=all -c $(calib_pgf90) $(DRIVER) $(INC)
 
 # link routines
 link:
