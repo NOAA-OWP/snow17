@@ -50,31 +50,17 @@ __pycache__/
 .env
 .python-version
 
-# pyenv #
-#########
-.python-version
-
-# Django #
-#################
+# Django 
 *.egg-info
 .installed.cfg
 
 # Unit test / coverage reports
-#################
 htmlcov/
 .tox/
 .coverage
 .cache
 nosetests.xml
 coverage.xml
-
-# Front-End #
-#############
-node_modules/
-bower_components/
-.grunt/
-src/vendor/
-dist/
 
 # Compiled Object files
 *.slo
@@ -112,3 +98,6 @@ alt_prev/
 # Temporary Development Notes
 LASTNEXT
 NOTES*
+
+# python notebook files
+*.ipynb*
