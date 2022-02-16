@@ -1,7 +1,6 @@
 subroutine sfc_pressure(elevation, sfc_pres)
   use nrtype
-  use constants, only: sfc_pres_a,sfc_pres_b,sfc_pres_c,&
-                       sfc_pres_d,sfc_pres_e
+  use constants, only: sfc_pres_a,sfc_pres_b,sfc_pres_c,sfc_pres_d,sfc_pres_e
 
   implicit none
 

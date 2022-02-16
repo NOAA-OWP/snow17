@@ -1,31 +1,8 @@
-! This code runs the Snow17, Sacramento and UH routing model for multiple HRUs within a basin
-!   and makes an areal average of the output
+! ====================================================================================
+! Driver for the Snow17 model for multiple HRUs within a basin and writes zone and areal mean output
 !
-! Orig:  2014 -- A. Newman (NCAR) chopped a single-zone model out of larger calibration codebase  
-!
-! Modifications: 
-!
-!   AWW-20160107:  
-!     adapted to run with input pcp, tmax, tmin, and external pet forcings
-!     added state file restarts and outputs
-!     cleaned up and added documention
-! 
-!   AWW-20160121:  - made to run subareas in loop so that multiple outputs could be combined
-!                    -- but each still required its own namelist; and it used a control file
-!   AWW-20160823: - MAJOR CHANGES to make the code work like a typical stand-alone model
-!                 - internal PET approach removed, forcings now expect prcp, tmax, tmin, PET
-!                     static parameters removed from header of forcing files; they're now tables
-!                 - multi-HRU functionality added down the the input level
-!                     param files combined to be listed once each, in a single namelist (as arg)
-!                 - calc sim_length using date math on control file instead of forcing read 
-!                 - HRUs are internally combined and written out into a basin-total file
-!                 - streamflow read/write functionality removed
-!                 - improved messaging about run details
-!   AWW-20161111: - changed the way state files are read - now can read the row format output
-!                   of the write_state functions, and will seek a date that is one day before
-!                   the starting day of the run, since that contains end-of-day state values
-!   AWW-20161207: - fixed bug in uh_statefile write/read
-! 
+! Adapted by A. Wood (2022) from the NCAR Snow17SacUH codebase (https://github.com/NCAR/NWS_hydro_models) 
+!   that was formulated from Office of Hydrology FORTRAN source files obtained circa 2012-2013
 ! ====================================================================================
 
 program multi_driver
@@ -147,12 +124,9 @@ program multi_driver
     end if  ! end of IF case for allocating only when running the first simulation area
 
     ! read forcing data
-    call read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,hru_id(nh)) ! hour not used
+    call read_areal_forcing(year, month, day, hour, tmin, tmax, precip, pet, hru_id(nh)) ! hour not used
     tair = (tmax+tmin)/2.0_dp  ! calculate derived variable (mean air temp)
                                ! tmax & tmin were used for pet earlier, this is vestigial but ok
-
-    print*, '  start:',year(1),month(1),day(1)
-    print*, '    end:',year(sim_length),month(sim_length),day(sim_length) 
 
     ! ================== RUN models for huc_area! ==========================================
   
@@ -268,7 +242,10 @@ program multi_driver
   end do   ! ========== END of simulation areas loop ====================
 
   ! ====== print combined simulation output ============
-  print*, 'Sim_length (days) =',sim_length
+  print*, ' '
+  print*, '            Start: ', year(1), month(1), day(1)
+  print*, '              End: ', year(sim_length), month(sim_length), day(sim_length) 
+  print*, 'Sim_length (days): ', sim_length
   print*, '--------------------------------------------------------------'
 
   combined_output_filename = trim(output_root) // trim(main_id)
@@ -292,7 +269,7 @@ program multi_driver
   
   write(125,'(A)') 'year mo dy hr tair pcp pcp*scf pet swe raim'
   do i = 1,sim_length
-    write(125,33) year(i), month(i), day(i), hour(i), tair_comb(i), precip_comb(i), precip_scf_comb(i),&
+    write(125, 33) year(i), month(i), day(i), hour(i), tair_comb(i), precip_comb(i), precip_scf_comb(i),&
                      pet_comb(i), sneqv_comb(i)*1000., raim_comb(i) 
   end do
   close(unit=125)

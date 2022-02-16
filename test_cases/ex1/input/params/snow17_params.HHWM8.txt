@@ -1,4 +1,5 @@
 hru_id HHWM8IL HHWM8IU 
+hru_area 2994.7 1271.3
 latitude 47.78 47.78
 elev 1612.50 2153.35
 scf 2.15177 1.86124 

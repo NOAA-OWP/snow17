@@ -4,7 +4,6 @@
 
 #========================================================================
 # PART 0: Define directory paths
-#========================================================================
 
 # Define main/top directory (parent of /build/)
 F_MASTER_DIR = /glade/work/andywood/profdev/snow17/code/snow17/
@@ -17,7 +16,6 @@ EXE = $(F_MASTER_DIR)/bin/snow17.exe
 
 #========================================================================
 # PART 1: Assemble all of the various sub-routines
-#========================================================================
 
 # Define directories
 DRIVER_DIR = $(F_MASTER_DIR)/src/driver/
@@ -59,12 +57,10 @@ calib_pgf90_2 = $(snow19)
 
 #========================================================================
 # PART 2: Define the libraries, driver programs, and executables
-#========================================================================
 
 # Define the Fortran Compilers
-#FC   = /glade/u/apps/ch/opt/ncarcompilers/0.5.0/pgi/20.4/gf90
-#FC77 = /glade/u/apps/ch/opt/ncarcompilers/0.5.0/pgi/20.4/pgf77
-
+#FC   = pgf90
+#FC77 = pgf77
 #FC  = ifort
 #FC77 = ifort
 FC  = gfortran  # DO NOT USE GFORTRAN UNTIL BUG IS FOUND
@@ -73,14 +69,12 @@ FC77 = gfortran
 # Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
  LOCL_PATH = /usr/local
-
  LIB = -L$(LOCL_PATH)/lib 
  INC = -I ./
 endif
 
 ifeq "$(FC77)" "pgf77"
  LOCL_PATH = /usr/local
-
  LIB77 = -L$(LOCL_PATH)/lib 
  INC77 = -I ./
 endif
@@ -92,7 +86,6 @@ DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(calib_DRIVER))
 
 #========================================================================
 # PART 3: Compile the puppy
-#========================================================================
 
 # Define flags
 ifeq "$(FC)" "gfortran"
@@ -122,14 +115,12 @@ ifeq "$(FC77)" "gfortran"
   FLAGS77 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
 endif
 
-#FLAGS = -O3 -W -v
-
 #.SUFFIXES: .f .o .f90
 
-# -- Compile --
+# ----- Compile -----
 
 all: model link clean 
-debug: debug link 
+debug: model_debug link 
 
 check:
 	echo test
@@ -142,7 +133,7 @@ model:
 	$(FC) $(FLAGS) -c $(calib_pgf90) $(DRIVER) \
 	$(INC)
 
-debug:
+model_debug:
 	$(FC77) $(FLAGS77) -g -fcheck=all -c $(calib_pgf77) $(INC77)
 	$(FC) $(FLAGS2) -g -fcheck=all -c $(calib_pgf90_2) $(INC)
 	$(FC) $(FLAGS) -g -fcheck=all -c $(calib_pgf90) $(DRIVER) \

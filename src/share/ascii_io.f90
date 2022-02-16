@@ -1,190 +1,7 @@
 ! A. Wood, Aug 2016:  These are all reconfigured to work with multi-HRU model setup
+! AWW 2022:  updated to move hru_id and area read into snow17 param files
 
-subroutine write_snow17_state(year,month,day,hour,cs,tprev,sim_length,curr_hru_id)
-  use nrtype
-  use def_namelists, only: snow_state_out_root
-  implicit none
-
-  !input variables
-  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
-  integer(I4B),dimension(:),intent(in)	:: year
-  integer(I4B),dimension(:),intent(in)	:: month
-  integer(I4B),dimension(:),intent(in)	:: day
-  integer(I4B),dimension(:),intent(in)	:: hour
-  real(sp),dimension(:,:),intent(in)	:: cs	    ! carry over array
-  real(sp),dimension(:),intent(in)	:: tprev    ! carry over variable
-  integer(I4B),intent(in)               :: sim_length   ! length of simulation
-
-  !local variables
-  integer(I4B)	:: i
-  character(len = 480) :: state_outfile
-
-  ! make state input filename
-  state_outfile = trim(snow_state_out_root) // trim(curr_hru_id)
-
-  open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
-  print*, 'Writing snow state file: ', trim(state_outfile)
-
-  41 FORMAT(I0.4, 3(I0.2), 20(F20.12))  ! big enough to separate fields
-  do i = 1,sim_length
-    ! print*, 'tprev = ',tprev(i)  AWW debugging
-
-    write(95,41) year(i),month(i),day(i),hour(i),tprev(i), cs(:,i)
-  enddo
-
-  close(unit=95)
-
-  return
-end subroutine write_snow17_state
-
-! ccccccccccccccccccccccccccccccc
-
-subroutine write_sac_state(year,month,day,hour,uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,sim_length,curr_hru_id)
-  use nrtype
-  use def_namelists, only: sac_state_out_root
-  implicit none
-
-  !input variables
-  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
-  integer(I4B),dimension(:),intent(in)	:: year
-  integer(I4B),dimension(:),intent(in)	:: month
-  integer(I4B),dimension(:),intent(in)	:: day
-  integer(I4B),dimension(:),intent(in)	:: hour
-  real(dp),dimension(:),intent(in)	:: uztwc	!state variable
-  real(dp),dimension(:),intent(in)	:: uzfwc	!state variable
-  real(dp),dimension(:),intent(in)	:: lztwc        !state variable
-  real(dp),dimension(:),intent(in)	:: lzfsc	!state variable
-  real(dp),dimension(:),intent(in)	:: lzfpc	!state variable
-  real(dp),dimension(:),intent(in)	:: adimc	!state variable
-  integer(I4B),intent(in)               :: sim_length   ! length of simulation
-
-  !local variables
-  integer(I4B)	:: i
-  character(len = 480) :: state_outfile
-
-  ! make state input filename
-  state_outfile = trim(sac_state_out_root) // trim(curr_hru_id)
-
-  42 FORMAT(I0.4, 3(I0.2), 6(F20.12))  ! big enough to separate fields
-  open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
-  print*, 'Writing sac state file: ', trim(state_outfile)
-
-  do i = 1,sim_length
-    write(95,42) year(i),month(i),day(i),hour(i),uztwc(i),uzfwc(i),&
-                       lztwc(i),lzfsc(i),lzfpc(i),adimc(i)
-  enddo
-
-  close(unit=95)
-
-  return
-end subroutine write_sac_state
-
-! cccccccccccccccccccccccccccccccccccccccccc
-
-subroutine write_uh_state(year,month,day,hour,expanded_tci,sim_length,uh_length,curr_hru_id)
-  ! A.Wood, 2016 -- this routine writes out TCI (total channel input) for the 
-  !   UH_LENGTH period preceding the first timestep of the simulation
-  !   When it is read in, it is concatenated with the simulation TCI to initialize 
-  !   the routing model
-  use nrtype
-  use def_namelists, only: uh_state_out_root
-  implicit none
-
-  !input variables
-  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
-  integer(I4B),dimension(:),intent(in)	:: year
-  integer(I4B),dimension(:),intent(in)	:: month
-  integer(I4B),dimension(:),intent(in)	:: day
-  integer(I4B),dimension(:),intent(in)	:: hour
-  real(sp), dimension(:), intent(in) 	:: expanded_tci
-  integer(I4B), intent(in)		:: sim_length
-  integer(I4B), intent(in)		:: uh_length
-
-  !local variables
-  integer(I4B)	:: i
-  character(len = 480) :: state_outfile
-
-  ! make state input filename
-  state_outfile = trim(uh_state_out_root) // trim(curr_hru_id)
-
-  open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
-  print*, 'Writing UH state file: ', trim(state_outfile)
-  print*, ' '
-
-  ! for each tstep, write out (uh_length-1) values before the current tstep, + the current tstep
-  ! reasoning: all state files are written for the END of timestep, so by grabbing a timestep's
-  ! state, one is initializing a simulation starting the following timestep (eg, day)
-
-  44 FORMAT(I0.4, 3(I0.2), 1000(F20.12))  ! big enough to separate fields
-  do i = 1,sim_length
-    write(95,44) year(i),month(i),day(i),hour(i),expanded_tci(i:i+uh_length-1)
-  enddo
-
-  close(unit=95)
-
-  return
-end subroutine write_uh_state
-
-! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
-
-subroutine read_uh_state(state_date_str, prior_tci,uh_length,curr_hru_id)
-  ! A.Wood, 2016 -- just read prior (uh_length) values ending at timestep-1 for tci
-  !   includes ability to read a keyword in state file to identify desired state
-  !   rather than match the date
-
-  use nrtype
-  use def_namelists, only: uh_state_in_root
-  implicit none
-
-  !input variable
-  character(len=10), intent(in) :: state_date_str  ! AWW string to match date in input states
-  character(len=20), intent(in) :: curr_hru_id	! HRU extension for state fname
-  integer(I4B), intent(in)	:: uh_length
-
-  !output variables
-  real(sp), dimension(:), intent(out) 	:: prior_tci
-
-  !local variables
-  integer(I4B)	       :: ios=0
-  character(len = 480) :: state_infile
-  character(len = 10)  :: file_state_date_str
-
-  ! make state input filename
-  state_infile = trim(uh_state_in_root) // trim(curr_hru_id)
-  open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
-  print*, 'Reading UH state file: ', trim(state_infile)
-
-  ! format for input is an unknown number of rows with uh_length+1 columns
-  !   the first column is the datestring, with no other information
-  !   note, only the data values 2:uh_length will get used, since the next
-  !   routing will include the first new day of the simulation
-  do while(ios .ge. 0)
-
-    ! read each row and check to see if the date matches the initial state date
-    read (95,*,IOSTAT=ios) file_state_date_str, prior_tci(:)
-
-    ! checks either for real date or special word identifying the state to use
-    !   this functionality facilitates ESP forecast initialization
-    if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
-      print *, '  -- found initial UH state on ', state_date_str
-      print*, ' '
-      close(unit=95)
-      return
-    end if
-
-  end do
-  close(unit=95)
-
-  ! if you reach here without returning, quit -- the initial state date was not found
-  print*, 'ERROR:  UH init state not found in UH initial state file.  Looking for: ',state_date_str
-  print*, '  -- last state read was: ', file_state_date_str
-  print*, 'Stopping.  Check inputs!'
-  stop
-
-end subroutine read_uh_state
-
-! CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC 
-
+! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
 subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
   use nrtype
   use def_namelists, only: snow_state_in_root
@@ -234,62 +51,46 @@ subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
 
 end subroutine read_snow17_state
 
-! ccccccccccccccccccccccccccccccc
-
-subroutine read_sac_state(state_date_str, uztwc,uzfwc,lztwc,lzfsc,lzfpc,adimc,curr_hru_id)
+! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
+subroutine write_snow17_state(year, month, day, hour, cs, tprev, sim_length, curr_hru_id)
   use nrtype
-  use def_namelists, only: sac_state_in_root
+  use def_namelists, only: snow_state_out_root
   implicit none
 
-  ! input variables
-  character(len=10), intent(in)	:: state_date_str  ! AWW string to match date in input states
-  character(len=20), intent(in) :: curr_hru_id	! HRU extension for sac state fname
-  real(sp), intent(out)	:: uztwc			!state variable
-  real(sp), intent(out)	:: uzfwc			!state array
-  real(sp), intent(out)	:: lztwc			!state array
-  real(sp), intent(out)	:: lzfsc			!state array
-  real(sp), intent(out)	:: lzfpc			!state array
-  real(sp), intent(out)	:: adimc
+  !input variables
+  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
+  integer(I4B),dimension(:),intent(in)	:: year
+  integer(I4B),dimension(:),intent(in)	:: month
+  integer(I4B),dimension(:),intent(in)	:: day
+  integer(I4B),dimension(:),intent(in)	:: hour
+  real(sp),dimension(:,:),intent(in)	:: cs	    ! carry over array
+  real(sp),dimension(:),intent(in)	    :: tprev    ! carry over variable
+  integer(I4B),intent(in)               :: sim_length   ! length of simulation
 
-  ! local variables
-  integer(I4B)	       :: ios=0
-  character(len = 480) :: state_infile
-  character(len = 10)  :: file_state_date_str
+  !local variables
+  integer(I4B)	:: i
+  character(len = 480) :: state_outfile
 
-  ! make state filename
-  state_infile = trim(sac_state_in_root) // trim(curr_hru_id)	
-  open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
-  print*, 'Reading sac state file: ', trim(state_infile)
+  ! make state input filename
+  state_outfile = trim(snow_state_out_root) // trim(curr_hru_id)
 
-  ! format for input is an unknown number of rows with 6 data columns
-  !   the first column is the datestring
-  do while(ios .ge. 0)
+  open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
+  print*, 'Writing snow state file: ', trim(state_outfile)
 
-    ! read each row and check to see if the date matches the initial state date
-    read(95,*,IOSTAT=ios) file_state_date_str, uztwc, uzfwc, lztwc, lzfsc, lzfpc, adimc
+  41 FORMAT(I0.4, 3(I0.2), 20(F20.12))  ! big enough to separate fields
+  do i = 1,sim_length
+    ! print*, 'tprev = ',tprev(i)  AWW debugging
 
-    ! checks either for real date or special word identifying the state to use
-    !   this functionality facilitates ESP forecast initialization
-    if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
-      print *, '  -- found initial sac model state on ', state_date_str
-      close(unit=95)
-      return
-    end if
+    write(95,41) year(i),month(i),day(i),hour(i),tprev(i), cs(:,i)
+  enddo
 
-  end do
   close(unit=95)
 
-  ! if you reach here without returning, quit -- the initial state date was not found
-  print*, 'ERROR:  sac init state not found in sac initial state file.  Looking for: ',state_date_str
-  print*, '  -- last state read was: ', file_state_date_str
-  print*, 'Stopping.  Check inputs!'
-  stop
+  return
+end subroutine write_snow17_state
 
-end subroutine read_sac_state
 
-! ccccccccccccccccccccccccccccccc
-
-!subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,vpd,dayl,swdown,precip)
+! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
 ! AWW modified to read PET instead of dayl, vpd and swdown
 ! AWW modified to return basin area in sq km
 subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_id)
@@ -367,149 +168,12 @@ subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_
   return
 end subroutine read_areal_forcing
 
-
-! ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-!      subroutines for reading param files: sac, snow17, unit hydrograph & pet
-! ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-subroutine read_sac_params(param_file_name,n_hrus)
-  use nrtype
-  use def_namelists, only: uztwm,uzfwm,uzk,pctim,adimp,zperc,rexp, &
-			lztwm,lzfsm,lzfpm,lzsk,lzpk,pfree,riva,side,rserv, &
-                        hru_area, hru_id
-  implicit none
- 
-  !input variables
-  character(len=400),intent(in) :: param_file_name
-  integer(I4B),intent(in) :: n_hrus
- 
-  !local variables
-  character(len=400)             :: readline
-  character(len=50)	         :: param
-  integer(I4B)		         :: ios=0
-  integer                        :: n_params_read  ! count number read
-  integer :: pos
- 
-  ! open parameter file
-  open(unit=50,file=trim(param_file_name),status='old')
-
-  ! allocate parameter variables
-  allocate(hru_id(n_hrus))
-  allocate(hru_area(n_hrus))
-  allocate(uztwm(n_hrus))
-  allocate(uzfwm(n_hrus))
-  allocate(uzk(n_hrus))
-  allocate(pctim(n_hrus))
-  allocate(adimp(n_hrus))
-  allocate(zperc(n_hrus))
-  allocate(rexp(n_hrus))
-  allocate(lztwm(n_hrus))
-  allocate(lzfsm(n_hrus))
-  allocate(lzfpm(n_hrus))
-  allocate(lzsk(n_hrus))  
-  allocate(lzpk(n_hrus))  
-  allocate(pfree(n_hrus))
-  allocate(riva(n_hrus))
-  allocate(side(n_hrus))
-  allocate(rserv(n_hrus))
-
-  print*, 'Reading Sac parameters'
-
-  ! --- now loop through parameter file and assign parameters 
-  n_params_read = 0
-  do while(ios == 0)
-    read(unit=50,FMT='(A)',IOSTAT=ios) readline
-
-    if(ios == 0) then   ! means 'readline' was from the file
-      !print*, '  ',trim(readline)
-
-      ! Find the first instance of whitespace in line read. Split label vs data.
-      pos = scan(readline, '    ')
-      param = trim(readline(1:pos))
-      readline = readline(pos+1:)  ! shorten readline to include only data
-
-      ! assign line to correct parameter array & type
-      ! (following http://jblevins.org/log/control-file)
-      select case (param)
-        case ('hru_id')
-          read(readline, *, iostat=ios) hru_id
-          n_params_read = n_params_read + 1
-        case ('hru_area')
-          read(readline, *, iostat=ios) hru_area
-          n_params_read = n_params_read + 1
-        case ('uztwm')
-          read(readline, *, iostat=ios) uztwm
-          n_params_read = n_params_read + 1
-        case ('uzfwm')
-          read(readline, *, iostat=ios) uzfwm
-          n_params_read = n_params_read + 1
-        case('uzk') 
-          read(readline, *, iostat=ios) uzk
-          n_params_read = n_params_read + 1
-        case('pctim')
-          read(readline, *, iostat=ios) pctim
-          n_params_read = n_params_read + 1
-        case('adimp')
-          read(readline, *, iostat=ios) adimp
-          n_params_read = n_params_read + 1
-        case('zperc')
-          read(readline, *, iostat=ios) zperc
-          n_params_read = n_params_read + 1
-        case('rexp')
-          read(readline, *, iostat=ios) rexp
-          n_params_read = n_params_read + 1
-        case('lztwm')
-          read(readline, *, iostat=ios) lztwm
-          n_params_read = n_params_read + 1
-        case('lzfsm')
-          read(readline, *, iostat=ios) lzfsm
-          n_params_read = n_params_read + 1
-        case('lzfpm')
-          read(readline, *, iostat=ios) lzfpm
-          n_params_read = n_params_read + 1
-        case('lzsk')
-          read(readline, *, iostat=ios) lzsk
-          n_params_read = n_params_read + 1
-        case('lzpk')
-          read(readline, *, iostat=ios) lzpk
-          n_params_read = n_params_read + 1
-        case('pfree')
-          read(readline, *, iostat=ios) pfree
-          n_params_read = n_params_read + 1
-        case('riva')
-          read(readline, *, iostat=ios) riva
-          n_params_read = n_params_read + 1
-        case('side')
-          read(readline, *, iostat=ios) side
-          n_params_read = n_params_read + 1
-        case('rserv')
-          read(readline, *, iostat=ios) rserv
-          n_params_read = n_params_read + 1
-        case default
-          print *, 'Parameter ',param,' not recognized in soil file'
-          ! something weird here...doesn't break it but somehow enters here after last real read
-      end select
-
-    end if
-
-  end do
-  close(unit=50)
-
-  ! quick check on completeness
-  if(n_params_read /= 18) then
-    print *, 'Only ',n_params_read, ' SAC params read, but need 18.  Quitting...'
-    stop
-  end if
-  !print*, '  -------------------'
-
-  return
-end subroutine read_sac_params
-
-! ================================================
-subroutine read_snow17_params(param_file_name,n_hrus)
+! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
+subroutine read_snow17_params(param_file_name, n_hrus)
   use nrtype
   use def_namelists, only: scf,mfmax,mfmin,uadj,si,pxtemp,nmf,&
-                        tipm,mbase,plwhc,daygm,adc,latitude, elev
+                        tipm,mbase,plwhc,daygm,adc,latitude, elev,&
+                        hru_id, hru_area
   implicit none
  
   !input variables
@@ -527,6 +191,10 @@ subroutine read_snow17_params(param_file_name,n_hrus)
   open(unit=51,file=trim(param_file_name),status='old')
 
   ! allocate parameter variables
+  allocate(hru_id(n_hrus))
+  allocate(hru_area(n_hrus))
+  allocate(latitude(n_hrus))
+  allocate(elev(n_hrus))
   allocate(scf(n_hrus))
   allocate(mfmax(n_hrus))
   allocate(mfmin(n_hrus))
@@ -538,8 +206,6 @@ subroutine read_snow17_params(param_file_name,n_hrus)
   allocate(mbase(n_hrus))
   allocate(plwhc(n_hrus))
   allocate(daygm(n_hrus))
-  allocate(latitude(n_hrus))
-  allocate(elev(n_hrus))
 
   print*, 'Reading Snow17 parameters'
 
@@ -559,8 +225,11 @@ subroutine read_snow17_params(param_file_name,n_hrus)
       ! assign line to correct parameter array & type
       ! (following http://jblevins.org/log/control-file)
       select case (param)
-        case ('hru_id')
-          ! do nothing, already stored it
+       case ('hru_id')
+          read(readline, *, iostat=ios) hru_id
+          n_params_read = n_params_read + 1
+        case ('hru_area')
+          read(readline, *, iostat=ios) hru_area
           n_params_read = n_params_read + 1
         case ('latitude')
           read(readline, *, iostat=ios) latitude
@@ -644,8 +313,8 @@ subroutine read_snow17_params(param_file_name,n_hrus)
   close(unit=51)
 
   ! quick check on completeness
-  if(n_params_read /= 25) then
-    print *, 'Only ',n_params_read, ' SNOW17 params read, but need 25.  Quitting...'
+  if(n_params_read /= 26) then
+    print *, 'Read ', n_params_read , ' SNOW17 params, but need 26.  Quitting...'
     stop
   end if
   !print*, '  -------------------'
@@ -653,71 +322,3 @@ subroutine read_snow17_params(param_file_name,n_hrus)
   return
 end subroutine read_snow17_params
 
-! cccccccccccc
-subroutine read_uh_params(param_file_name,n_hrus)
-  use nrtype
-  use def_namelists, only: unit_shape,unit_scale
-  implicit none
- 
-  !input variables
-  integer(I4B),intent(in) :: n_hrus
-  character(len=1024),intent(in) :: param_file_name
-
-  !local variables
-  character(len=400)            :: readline
-  character(len=50)		:: param
-  integer(I4B)			:: ios=0
-  integer :: pos
-  integer                        :: n_params_read  ! count number read
-
-  ! open parameter file
-  open(unit=52,file=trim(param_file_name),status='old')
-
-  ! allocate parameter variables
-  allocate(unit_shape(n_hrus))
-  allocate(unit_scale(n_hrus))
-
-  print*, 'Reading UH parameters'
-
-  ! --- now loop through parameter file and assign parameters 
-  n_params_read = 0
-  do while(ios .eq. 0)
-    read(unit=52,FMT='(A)',IOSTAT=ios) readline
-
-    if(ios == 0) then   ! means 'readline' was from the file
-      !print*, '  ',trim(readline)
-
-      ! Find the first instance of whitespace in line read. Split label vs data.
-      pos = scan(readline, '    ')
-      param = readline(1:pos)
-      readline = readline(pos+1:)  ! shorten readline to include only data
-
-      ! assign line to correct parameter array & type
-      ! (following http://jblevins.org/log/control-file)
-      select case (param)
-        case ('hru_id')
-          ! do nothing, already stored it
-          n_params_read = n_params_read + 1
-        case ('unit_shape')
-          read(readline, *, iostat=ios) unit_shape
-          n_params_read = n_params_read + 1
-        case ('unit_scale')
-          read(readline, *, iostat=ios) unit_scale
-          n_params_read = n_params_read + 1
-        case default
-          print *, 'Parameter ',param,' not recognized in UH file'
-      end select
-
-    end if
-
-  end do
-  close(unit=52)
-
-  ! quick check on completeness
-  if(n_params_read /= 3) then
-    print *, 'Only ',n_params_read, ' UH params read, but need 3.  Quitting...'
-    stop
-  end if
-
-  return
-end subroutine read_uh_params

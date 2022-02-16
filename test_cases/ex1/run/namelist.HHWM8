@@ -15,6 +15,7 @@ end_day     = 31
 
 ! starting states (for all zones; could also distribute into param files)
 init_swe    = 0.0	! initial swe in mm if not performing a warm start run
+                    ! tprev?
 
 ! state start/write flags and files
 warm_start_run     = 0	! is this run started from a state file?  no=0  yes=1

@@ -101,3 +101,6 @@ NOTES*
 
 # python notebook files
 *.ipynb*
+
+# unzipped test case
+./test_cases/ex1/
