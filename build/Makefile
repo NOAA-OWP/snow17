@@ -3,16 +3,22 @@
 #========================================================================
 
 #========================================================================
-# PART 0: Define directory paths
+# PART 0: Define directory paths and compiler
 
 # Define main/top directory (parent of /build/)
-F_MASTER_DIR = /glade/work/andywood/profdev/snow17/code/snow17/
+# this relative path drops into snow17 parent directory
+F_MASTER_DIR =..
 
 # Location of the compiled modules
 MOD_PATH = $(F_MASTER_DIR)/build/
 
 # Define the executable and path
 EXE = $(F_MASTER_DIR)/bin/snow17.exe
+
+# Define your Fortran compiler
+#FC  = pgf90
+#FC  = ifort
+FC   = gfortran
 
 #========================================================================
 # PART 1: Assemble all of the various sub-routines
@@ -23,7 +29,7 @@ snow19_dir = $(F_MASTER_DIR)/src/snow19/
 share_dir  = $(F_MASTER_DIR)/src/share/
 
 # share utilities
-calib_UTIL= \
+model_UTIL= \
 		nrtype.f90 \
 		constants.f90 \
 		def_namelists.f90 \
@@ -32,10 +38,10 @@ calib_UTIL= \
 		ascii_io.f90 \
 		day_of_year.f90 \
 		sfc_pressure.f90 
-UTIL = $(patsubst %, $(share_dir)/%, $(calib_UTIL))
+UTIL = $(patsubst %, $(share_dir)/%, $(model_UTIL))
 
 # snow-19 code (fortran 90, different options)
-calib_snow19= \
+model_snow19= \
 		zero19.f \
 		rout19.f \
 		aesc19.f \
@@ -49,19 +55,14 @@ calib_snow19= \
 		SNDEPTH.f \
 		PACK19.f \
 		exsnow19.f
-snow19 = $(patsubst %, $(snow19_dir)/%, $(calib_snow19))
+snow19 = $(patsubst %, $(snow19_dir)/%, $(model_snow19))
 
 # ... and stitch it all together...
-calib_pgf90   = $(UTIL)
-calib_pgf90_2 = $(snow19)
+utilities   = $(UTIL)
+model = $(snow19)
 
 #========================================================================
 # PART 2: Define the libraries, driver programs, and executables
-
-# Define the Fortran Compilers
-#FC  = pgf90
-#FC  = ifort
-FC   = gfortran
 
 # Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
@@ -70,10 +71,16 @@ ifeq "$(FC)" "pgf90"
  INC = -I ./
 endif
 
-# Define the driver routine
-calib_DRIVER = multi_driver.f90
+ifeq "$(FC)" "gfortran"
+ LOCL_PATH = /usr/local
+ LIB = -L$(LOCL_PATH)/lib 
+ INC = -I ../
+endif
 
-DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(calib_DRIVER))
+# Define the driver routine
+model_DRIVER = multi_driver.f90
+
+DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(model_DRIVER))
 
 #========================================================================
 # PART 3: Compile the puppy
@@ -108,14 +115,14 @@ check:
 	echo test
 	echo $(FC)
 
-# compile calibration code
+# compile model code
 model:
-	$(FC) $(FLAGS2) -c $(calib_pgf90_2) $(INC)
-	$(FC) $(FLAGS) -c $(calib_pgf90) $(DRIVER) $(INC)
+	$(FC) $(FLAGS2) -c $(model) $(INC)
+	$(FC) $(FLAGS) -c $(utilities) $(DRIVER) $(INC)
 
 model_debug:
-	$(FC) $(FLAGS2) -g -fcheck=all -c $(calib_pgf90_2) $(INC)
-	$(FC) $(FLAGS) -g -fcheck=all -c $(calib_pgf90) $(DRIVER) $(INC)
+	$(FC) $(FLAGS2) -g -fcheck=all -c $(model) $(INC)
+	$(FC) $(FLAGS) -g -fcheck=all -c $(utilities) $(DRIVER) $(INC)
 
 # link routines
 link:
