@@ -22,9 +22,7 @@ If specific versions of other software are required, or known not to work, call 
 
 ## Installation
 
-TBA:  Detailed instructions on how to install, configure, and get the project running.
-This should be frequently tested to ensure reliability. Alternatively, link to
-a separate [INSTALL](INSTALL.md) document.
+To build and run Snow-17 with example data, check out the [INSTALL](INSTALL.md) document.
 
 ## Configuration
 
