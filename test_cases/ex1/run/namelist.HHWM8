@@ -1,0 +1,29 @@
+&INIT_CONTROL
+main_id           = "HHWM8" ! basin or gage id 
+n_hrus            = 2 ! number of sub-areas in model
+forcing_root      = "../input/forcing/forcing_pet.mixed_ens."
+output_root       = "../output/snowout.txt."
+snow17_param_file = "../input/params/snow17_params.HHWM8.txt"
+output_hrus       = 0     ! output HRU results? (1=yes; 0=no)
+
+start_year  = 1970
+start_month = 1
+start_day   = 1
+end_year    = 2015
+end_month   = 12
+end_day     = 31
+
+! starting states (for all zones; could also distribute into param files)
+init_swe    = 0.0	! initial swe in mm if not performing a warm start run
+                    ! tprev?
+
+! state start/write flags and files
+warm_start_run     = 0	! is this run started from a state file?  no=0  yes=1
+write_states       = 0  ! write out restart state files for future 'warm_start' runs
+
+! filenames only needed if warm_start_run = 1
+snow_state_in_root = "../state/snow17_states.txt."  ! snow17 input state root
+
+! filenames only needed if write_states = 1
+snow_state_out_root = "../state/snow17_states.txt." ! snow17 output states root
+/
