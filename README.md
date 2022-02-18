@@ -10,9 +10,6 @@ the NextGen simulation and forecasting framework.
   is intended as standalone or as a module in a framework or other ecosystem.  It has been compiled using gnu, pgi and intel compilers. 
   - **Status**: pre-Beta (still in initial development)
   - **Links**:  This code was adapted from source code included in https://github.com/NCAR/NWS_hydro_models -- a version used in federally-funded streamflow forecasting research at NCAR. The original source code for that effort was obtained from the NWS Office of Hydrology around 2013. 
-  ** - Describe what sets this apart from related-projects. Linking to another doc or page is OK if this can't 
-  be expressed in a sentence or two.
-
 
 ## Dependencies
 
