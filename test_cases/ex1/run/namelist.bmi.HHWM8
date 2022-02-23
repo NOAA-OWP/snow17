@@ -1,0 +1,22 @@
+&SNOW17_CONTROL
+main_id             = "HHWM8"      ! basin label or gage id 
+n_hrus              = 2            ! number of sub-areas in model
+forcing_root        = "../input/forcing/forcing_pet.mixed_ens."
+output_root         = "../output/snowout.txt."
+snow17_param_file   = "../input/params/snow17_params.HHWM8.txt"
+output_hrus         = 0            ! output HRU results? (1=yes; 0=no)
+model_timestep      = 86400        ! in seconds (86400 seconds = 1 day)
+
+startdatehr         = 1970010101   ! start date time, backward looking
+enddatehr           = 2016010101   ! end date time
+
+! state start/write flags and files
+warm_start_run      = 0	 ! is this run started from a state file?  no=0  yes=1
+write_states        = 0  ! write out restart/state files for future 'warm_start' runs
+
+! filenames only needed if warm_start_run = 1
+snow_state_in_root  = "../state/snow17_states.txt."  ! input state filename root
+
+! filenames only needed if write_states = 1
+snow_state_out_root = "../state/snow17_states.txt."  ! output states filename root
+/
