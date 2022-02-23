@@ -201,7 +201,7 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    time = dble(this%model%domain%ntime * this%model%domain%dt)
+    time = dble(this%model%runinfo%ntime * this%model%runinfo%dt)
     bmi_status = BMI_SUCCESS
   end function snow17_end_time
 
@@ -211,7 +211,7 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    time = dble(this%model%domain%time_dbl)
+    time = dble(this%model%runinfo%time_dbl)
     bmi_status = BMI_SUCCESS
   end function snow17_current_time
 
@@ -221,7 +221,7 @@ contains
     double precision, intent(out) :: time_step
     integer :: bmi_status
 
-    time_step = dble(this%model%domain%dt)
+    time_step = dble(this%model%runinfo%dt)
     bmi_status = BMI_SUCCESS
   end function snow17_time_step
 
@@ -252,12 +252,12 @@ contains
     double precision :: n_steps_real
     integer :: n_steps, i, s
 
-    if (time < this%model%domain%time_dbl) then
+    if (time < this%model%runinfo%time_dbl) then
        bmi_status = BMI_FAILURE
        return
     end if
 
-    n_steps_real = (time - this%model%domain%time_dbl) / this%model%domain%dt
+    n_steps_real = (time - this%model%runinfo%time_dbl) / this%model%runinfo%dt
     n_steps = floor(n_steps_real)
     do i = 1, n_steps
        s = this%update()

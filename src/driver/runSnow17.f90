@@ -3,8 +3,7 @@
 module RunModule
   
   use namelistModule
-  use asciiReadModule
-  use outputModule
+  use ioModule
   use utilitiesModule
   use forcingModule
   use statesModule
