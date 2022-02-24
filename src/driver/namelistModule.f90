@@ -30,7 +30,7 @@ end type namelist_type
 
 contains
 
-  subroutine readNamelistVars(this, namelist_file)
+  subroutine readNamelist(this, namelist_file)
 
     class(namelist_type) :: this
     ! Optional namelist_file path/filename to read

@@ -103,35 +103,49 @@ contains
               forcing    => model%forcing,    &
               states     => model%states)
     
-    ! Compute the current UNIX datetime
-    runinfo%curr_datetime = runinfo%sim_datetimes(runinfo%itime)     ! use end-of-timestep datetimes
+      ! Compute the current UNIX datetime
+      runinfo%curr_datetime = runinfo%sim_datetimes(runinfo%itime)     ! use end-of-timestep datetimes
 
-    call unix_to_date (runinfo%curr_datetime, curr_yr, curr_mo, curr_dy, curr_hr, curr_min, curr_sec)
-    ! print '(2x,I4,1x,I2,1x,I2,1x,I2,1x,I2)', curr_yr, curr_mo, curr_dy, curr_hr, curr_min ! time check for debugging
+      call unix_to_date (runinfo%curr_datetime, curr_yr, curr_mo, curr_dy, curr_hr, curr_min, curr_sec)
+      ! print '(2x,I4,1x,I2,1x,I2,1x,I2,1x,I2)', curr_yr, curr_mo, curr_dy, curr_hr, curr_min ! time check for debugging
     
-    forcing_timestep = runinfo%dt
+      forcing_timestep = runinfo%dt
   
-    ! --- loop over spatial sub-units ---
-    do nh=1, runinfo%n_hrus
-      print*, 'Running area',nh,'out of',n_hrus,'for watershed ', main_id
+      ! --- loop over spatial sub-units ---
+      do nh=1, runinfo%n_hrus
+        print*, 'Running area',nh,'out of',n_hrus,'for watershed ', main_id
 
-      !---------------------------------------------------------------------
-      ! Read in the forcing data if NGEN_FORCING_ACTIVE is not defined
-      !---------------------------------------------------------------------
+        !---------------------------------------------------------------------
+        ! Read in the forcing data if NGEN_FORCING_ACTIVE is not defined
+        !---------------------------------------------------------------------
 #ifndef NGEN_FORCING_ACTIVE
-      call read_forcing_ascii(iunit(nh), runinfo%nowdate, forcing_timestep, forcing%precip, forcing%tair, ierr)
+        call read_forcing_ascii(iunit(nh), runinfo%nowdate, forcing_timestep, forcing%precip, forcing%tair, ierr)
 #endif
 
-      !---------------------------------------------------------------------
-      ! call the main snow17 state update routine
-      !---------------------------------------------------------------------
-      call statesMain (runinfo, parameters, forcing, states)
+        !---------------------------------------------------------------------
+        ! call the main snow17 state update routine
+        !---------------------------------------------------------------------
+        !call snow_states_update (runinfo, parameters, forcing, states)
+        !set single precision inputs
+        tair_sp   = real(forcing%tair,  kind(sp))
+        precip_sp = real(forcing%precip,kind(sp))
+        
+        call exsnow19(int(dt),int(dt/sec_hour),day(i),month(i),year(i),&
+    	  !SNOW17 INPUT AND OUTPUT VARIABLES
+  	      precip_sp,tair_sp,raim(i),sneqv(i),snow(i),snowh(i),&
+    	  !SNOW17 PARAMETERS
+          !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
+  	      real(latitude(nh),kind(sp)),scf(nh),mfmax(nh),mfmin(nh),uadj(nh),si(nh),nmf(nh),&
+          tipm(nh),mbase(nh),pxtemp(nh),plwhc(nh),daygm(nh),&
+          real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
+          !SNOW17 CARRYOVER VARIABLES
+  		  cs,tprev)         
 
-      !---------------------------------------------------------------------
-      ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
-      !---------------------------------------------------------------------
+        !---------------------------------------------------------------------
+        ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
+        !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
-      call add_to_output(runinfo, parameters, forcing, states, runinfo%itime)
+        call add_to_output(runinfo, parameters, forcing, states, runinfo%itime)
 #endif
     
       end do  ! end of spatial sub-unit loop

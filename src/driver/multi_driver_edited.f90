@@ -153,21 +153,21 @@ program multi_driver
       pet_sp    = real(pet(i),kind(sp))
    
       call exsnow19(int(dt),int(dt/sec_hour),day(i),month(i),year(i),&
-    	!SNOW17 INPUT AND OUTPUT VARIABLES
-  	  precip_sp,tair_sp,raim(i),sneqv(i),snow(i),snowh(i),&
+    	  !SNOW17 INPUT AND OUTPUT VARIABLES
+  	      precip_sp,tair_sp,raim(i),sneqv(i),snow(i),snowh(i),&
     	  !SNOW17 PARAMETERS
           !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
-  	  real(latitude(nh),kind(sp)),scf(nh),mfmax(nh),mfmin(nh),uadj(nh),si(nh),nmf(nh),&
-              tipm(nh),mbase(nh),pxtemp(nh),plwhc(nh),daygm(nh),&
-              real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
-              !SNOW17 CARRYOVER VARIABLES
-  			  cs,tprev) 
+  	      real(latitude(nh),kind(sp)),scf(nh),mfmax(nh),mfmin(nh),uadj(nh),si(nh),nmf(nh),&
+          tipm(nh),mbase(nh),pxtemp(nh),plwhc(nh),daygm(nh),&
+          real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
+          !SNOW17 CARRYOVER VARIABLES
+  		  cs,tprev) 
   
       ! store other single timestep run outputs for possible state write
       if(write_states > 0) then
         cs_states(:,i)  = cs
         tprev_states(i) = tprev
-        ! print*,'tprev: ',i,day(i),month(i),year(i),tprev,cs(1)  AWW debugging
+        ! print*,'tprev: ',i,day(i),month(i),year(i),tprev,cs(1)  debugging
       end if  
 
     end do  
