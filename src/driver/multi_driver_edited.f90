@@ -30,12 +30,11 @@ program multi_driver
   real(dp)     :: total_area   ! (sqkm) AWW needed for combining outputs
   integer(I4B) :: i, k, m      ! tau
   integer(I4B) :: sim_length   ! length of simulation (days)
-  real(sp)	   :: pet_sp
   real(sp)     :: tair_sp
   real(sp)	   :: precip_sp
+  real(dp)     :: pa       ! snow17 surface pressure
 
-  ! snow-17 carry over variables
-  real(dp)                :: pa       ! snow-17 surface pressure
+  ! snow17 carry over variables
   real(sp)                :: tprev    ! carry over variable
   real(sp),dimension(19)  :: cs       ! carry over variable array
   real(sp),dimension(:),allocatable    :: tprev_states    ! for state file write
@@ -44,34 +43,33 @@ program multi_driver
   ! ==== ALLOCATABLE VARIABLES ====
 
   ! snow-17 output variables  single precision
-  real(sp), dimension(:),allocatable    :: snowh, sneqv, snow !output variables for snow-17
+  real(sp), dimension(:),allocatable   :: snowh, sneqv, snow !output variables for snow-17
 
   ! date variables
   integer, dimension(:),allocatable :: year, month, day, hour
-  integer(I4B)                      :: state_year, state_month, state_day
+  integer(I4B)                      :: state_year, state_month, state_day, state_hr
 
   ! precip/snowmelt inputs to Sac from Snow17
   real(sp), dimension(:),allocatable :: raim
 
   ! atmospheric forcing variables
-  real(dp), dimension(:),allocatable :: tmin, tmax, precip, pet
-  real(dp), dimension(:),allocatable :: vpd, dayl, swdown ! used in pet calc if desired
+  real(dp), dimension(:),allocatable :: tair, precip
 
   ! derived forcing variables
   real(dp), dimension(:),allocatable :: tair
 
   ! various other combined variables (aggregating multiple basins zones)
-  real(sp), dimension(:),allocatable    :: sneqv_comb ! AWW ditto, combined vars
+  real(sp), dimension(:),allocatable :: sneqv_comb ! AWW ditto, combined vars
   real(sp), dimension(:),allocatable :: raim_comb  ! AWW combined vars
   real(dp), dimension(:),allocatable :: precip_comb, precip_scf_comb ! AWW combined vars
-  real(dp), dimension(:),allocatable :: pet_comb, tair_comb  ! AWW combined vars
+  real(dp), dimension(:),allocatable :: tair_comb  ! AWW combined vars
 
   ! =======  CODE starts below =====================================================================
 
   ! get control file filename as argument
   i = 0
   do
-    call get_command_argument(i,arg)
+    call get_command_argument(i, arg)
     if(i .eq. 1) namelist_name=arg   ! first argument has i=1
     if(LEN_TRIM(arg) == 0) EXIT
     i = i + 1
@@ -96,49 +94,42 @@ program multi_driver
 
     ! --- allocate variables (before simulating first area) ---
     if(nh .eq. 1) then
-      ! get sim length to use in allocating variables (AWW new routine)
+      ! calculate sim length to use in allocating variables (AWW new routine)
       call date_diff_ndays(start_year,start_month,start_day,end_year,end_month,end_day,sim_length)
-     
+
       !forcing variables
       allocate(year(sim_length))
       allocate(month(sim_length))
       allocate(day(sim_length))
       allocate(hour(sim_length))
-      allocate(tmax(sim_length))
-      allocate(tmin(sim_length))
-      allocate(vpd(sim_length))
-      allocate(dayl(sim_length))
-      allocate(swdown(sim_length))
       allocate(precip(sim_length))
-      allocate(pet(sim_length))
       allocate(tair(sim_length))
   
-      ! snow-17 output variables
+      ! snow17 output variables
       allocate(snowh(sim_length))
       allocate(sneqv(sim_length))
       allocate(snow(sim_length))
       allocate(raim(sim_length))
+      
+      ! snow17 state variables
       allocate(cs_states(19,sim_length)) ! new for state write
       allocate(tprev_states(sim_length)) ! ditto
 
     end if  ! end of IF case for allocating only when running the first simulation area
 
     ! read forcing data
-    call read_areal_forcing(year, month, day, hour, tmin, tmax, precip, pet, hru_id(nh)) ! hour not used
-    tair = (tmax+tmin)/2.0_dp  ! calculate derived variable (mean air temp)
-                               ! tmax & tmin were used for pet earlier, this is vestigial but ok
+    call read_areal_forcing(year, month, day, hour, tair, precip, hru_id(nh)) ! hour not used
 
     ! ================== RUN models for huc_area! ==========================================
   
     ! get sfc_pressure (pa is estimate by subroutine, needed by snow17 call)
-    call sfc_pressure(elev(nh),pa)
+    call sfc_pressure(elev(nh), pa)
   
     ! set single precision sac state variables to initial values
     if(warm_start_run .eq. 0) then
       ! we are not warm starting from a state file
-      cs(1)    = init_swe   ! AWW: just initialize first/main component of SWE (model 'WE')
-      cs(2:19) = 0          !      set the rest to zero
-      tprev    = 0          ! AWW ADDED
+      cs(1:19) = 0          ! init. SWE (model 'WE') cs(1) and rest of model states to zero
+      tprev    = 0          ! temperature at end of previous timestep / start of run
 
     else if(warm_start_run .gt. 0) then
       ! we *ARE* warm starting from a state file
@@ -162,21 +153,21 @@ program multi_driver
       pet_sp    = real(pet(i),kind(sp))
    
       call exsnow19(int(dt),int(dt/sec_hour),day(i),month(i),year(i),&
-    	!SNOW17 INPUT AND OUTPUT VARIABLES
-  	  precip_sp,tair_sp,raim(i),sneqv(i),snow(i),snowh(i),&
+    	  !SNOW17 INPUT AND OUTPUT VARIABLES
+  	      precip_sp,tair_sp,raim(i),sneqv(i),snow(i),snowh(i),&
     	  !SNOW17 PARAMETERS
           !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
-  	  real(latitude(nh),kind(sp)),scf(nh),mfmax(nh),mfmin(nh),uadj(nh),si(nh),nmf(nh),&
-              tipm(nh),mbase(nh),pxtemp(nh),plwhc(nh),daygm(nh),&
-              real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
-              !SNOW17 CARRYOVER VARIABLES
-  			  cs,tprev) 
+  	      real(latitude(nh),kind(sp)),scf(nh),mfmax(nh),mfmin(nh),uadj(nh),si(nh),nmf(nh),&
+          tipm(nh),mbase(nh),pxtemp(nh),plwhc(nh),daygm(nh),&
+          real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
+          !SNOW17 CARRYOVER VARIABLES
+  		  cs,tprev) 
   
       ! store other single timestep run outputs for possible state write
       if(write_states > 0) then
         cs_states(:,i)  = cs
         tprev_states(i) = tprev
-        ! print*,'tprev: ',i,day(i),month(i),year(i),tprev,cs(1)  AWW debugging
+        ! print*,'tprev: ',i,day(i),month(i),year(i),tprev,cs(1)  debugging
       end if  
 
     end do  
@@ -191,13 +182,13 @@ program multi_driver
       open(unit=45,FILE=trim(hru_output_filename),FORM='formatted',status='replace')  ! output file open
   
       ! print header first
-      write(45,'(A)') 'year mo dy hr tair pcp pcp*scf pet swe raim '
+      write(45,'(A)') 'year mo dy hr tair pcp pcp*scf swe raim '
   
-      31 FORMAT(I4.4, 3(1x,I2.2),6(F8.2))  ! AWW: goes with update
+      31 FORMAT(I4.4, 3(1x,I2.2),5(F8.2))  ! AWW: goes with update
 
       do i = 1,sim_length
         write(45,31) year(i),month(i),day(i),hour(i),tair(i),precip(i),precip(i)*scf(nh),&
-                     pet(i), sneqv(i)*1000.,raim(i)
+                     sneqv(i)*1000.,raim(i)
       end do
       close(unit=45)
     end if  ! IF case for writing HRU-specific output to file (not including states)

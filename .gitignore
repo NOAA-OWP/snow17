@@ -95,9 +95,11 @@ coverage.xml
 # Working directories
 alt_prev/
 
-# Temporary Development Notes
+# Temporary Development Files 
 LASTNEXT
 NOTES*
+*.tmp
+*.lnk
 
 # python notebook files
 *.ipynb*
