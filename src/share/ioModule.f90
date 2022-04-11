@@ -1,6 +1,7 @@
-module AsciiReadModule
+module ioModule
   
   use UtilitiesModule
+  use parametersModule
   
   implicit none
   
@@ -92,54 +93,72 @@ contains
 
 
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
-subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
+subroutine read_snow17_state(cs, tprev, namelist, parameters)
   use nrtype
-  use def_namelists, only: snow_state_in_root
+  !use def_namelists, only: snow_state_in_root
   implicit none
 
   ! input variables
-  character(len=10),intent(in)	:: state_date_str  ! AWW string to match date in input states
-  character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for snow state fname
+  class(parameters_type), intent(in)        :: parameters
+  class(namelist_type), intent(in)          :: namelist
 
-  ! output variables
-  real(sp), intent(out) 		:: tprev	! carry over variable
-  real(sp), dimension(:), intent(out)	:: cs		! carry over array
+  ! [in]/output variables
+  real(sp), dimension(:), intent(inout) 	:: tprev	! carry over variable
+  real(sp), dimension(:,:), intent(inout)	:: cs		! carry over array
 
-  !local variables
-  integer(I4B)	       :: ios=0
-  character(len = 480) :: state_infile
-  character(len = 10)  :: file_state_date_str
+  ! local variables
+  integer               :: hru
+  integer(I4B)	        :: ios=0
+  character(len=480)    :: state_infile
+  character(len=10)     :: file_state_date_str
+  character(len=10)	    :: state_date_str  ! AWW string to match date in input states
+  integer(I4B)          :: state_year, state_month, state_day
+  
+  
+  ! starting statefiles match format of statefile outputs (date then vars)
+  !   state read routines look for state from one day before the start date of run
+  call day_before_date(namelist%start_year,namelist%start_month,namelist%start_day,state_year,state_month,state_day)
+  ! create string that will be matched in state file
+  write(state_date_str,'(I0.4,I0.2,I0.2,I0.2)') state_year, state_month, state_day, hour(1)
+  
+  ! loop over hrus and read and store initial state values
+  do hru=1,n_hrus
+    print*, 'Reading initial model states for area', hru, 'out of', namelist%n_hrus, 'for watershed ', namelist%main_id
 
-  ! make state filename
-  state_infile = trim(snow_state_in_root) // trim(curr_hru_id)
-  open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
-  print*, 'Reading snow state file: ', trim(state_infile)
+    ! make state filename
+    state_infile = trim(namelist%snow_state_in_root) // trim(parameters%hru_id[hru])
+    open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
+    print*, 'Reading snow state file: ', trim(state_infile)
 
-  ! format for input is an unknown number of rows with 20 data columns (1 tprev, 19 for cs)
-  !   the first column is the datestring
-  do while(ios .ge. 0)
+    ! format for input is an unknown number of rows with 20 data columns (1 tprev, 19 for cs)
+    !   the first column is the datestring
+    do while(ios .ge. 0)
 
-    ! read each row and check to see if the date matches the initial state date
-    read(95,*,IOSTAT=ios) file_state_date_str, tprev, cs(:)
+      ! read each row and check to see if the date matches the initial state date
+      read(95,*,IOSTAT=ios) file_state_date_str, tprev(:), cs(hru,:)
 
-    ! checks either for real date or special word identifying the state to use
-    !   this functionality facilitates ESP forecast initialization
-    if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
-      print *, '  -- found initial snow state on ', state_date_str
-      close(unit=95)
-      return
-    end if
+      ! checks either for real date or special word identifying the state to use
+      !   this functionality facilitates ESP forecast initialization
+      if(file_state_date_str==state_date_str .or. file_state_date_str=='PseudoDate') then
+        print *, '  -- found initial snow state on ', state_date_str
+        close(unit=95)
+        return
+      end if
+      
+    end do  ! end loop through state file
+    close(unit=95)
 
-  end do
-  close(unit=95)
-
-  ! if you reach here without returning, quit -- the initial state date was not found
-  print*, 'ERROR:  snow init state not found in snow initial state file.  Looking for: ',state_date_str
-  print*, '  -- last state read was: ', file_state_date_str
-  print*, 'Stopping.  Check inputs!'
-  stop
+    ! if you reach here without returning, quit -- the initial state date was not found
+    print*, 'ERROR:  snow init state not found in snow initial state file.  Looking for: ', state_date_str
+    print*, '  -- last state read was: ', file_state_date_str
+    print*, 'Stopping.  Check inputs!'
+    stop
+    
+  end do   ! end loop over one or more hrus (eg, snowbands)
 
 end subroutine read_snow17_state
+
+
 
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
 subroutine write_snow17_state(year, month, day, hour, cs, tprev, sim_length, curr_hru_id)
@@ -504,4 +523,4 @@ end subroutine read_areal_forcing
 
   end function upcase
   
-end module AsciiReadModule
+end module ioModule

@@ -1,4 +1,4 @@
-! A.Wood-2016:  large edits for distributed SAC
+! A.Wood-2016:  large edits for distributed Snow17
 module def_namelists
   use nrtype
   use 

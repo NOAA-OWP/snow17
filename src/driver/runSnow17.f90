@@ -5,9 +5,8 @@ module RunModule
   use namelistModule
   use ioModule
   use utilitiesModule
-  use forcingModule
-  use statesModule
   use dateTimeUtilsModule
+  use parametersModule
   
   !use interfaces, only: sfc_pressure
   !use constants, only: sfc_pres_a,sfc_pres_b,sfc_pres_c,sfc_pres_d,sfc_pres_e
@@ -19,7 +18,7 @@ module RunModule
     type(runinfo_type)    :: runinfo
     type(parameters_type) :: parameters
     type(forcing_type)    :: forcing
-    type(states_type)     :: states
+    type(modelvar_type)   :: modelvar
   end type snow17_type
 
 contains
@@ -39,18 +38,24 @@ contains
               runinfo    => model%runinfo,    &
               parameters => model%parameters, &
               forcing    => model%forcing,    &
-              states     => model%states)
+              modelvar   => model%modelvar)
               
-      !---------------------------------------------------------------------
-      !  initialize
-      !---------------------------------------------------------------------
+      !-----------------------------------------------------------------------------------------
+      !  read namelist, initialize data structures
+      !-----------------------------------------------------------------------------------------
       call namelist%readNamelist(config_file)
 
       call runinfo%Init(namelist)           ! initialize run space-time info
       call parameters%Init(namelist)        ! read and/or initialize parameters
       call forcing%Init(namelist)           ! initialize forcing data type/structure
-      call states%Init(namelist)            ! initialize model states (incl. restarts)
-      !call output%Init(namelist)            ! initialize output data type/structure
+      call modelvar%Init(namelist)          ! initialize model states (incl. restarts)
+      call output%Init(namelist)            ! initialize output data type/structure
+      
+      ! read parameters from input file
+      call parameters%read_snow17_parameters(this, namelist%snow17_param_file)
+
+      ! initialize model states
+      call modelvar%assignStates(this, namelist%snow17_param_file)
          
       !---------------------------------------------------------------------
       ! Open the forcing file

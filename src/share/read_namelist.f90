@@ -1,14 +1,14 @@
 subroutine read_namelist(namelist_name)
-  use nrtype
+  !use nrtype
   use def_namelists
 
   implicit none
 
   ! input variable
-  character(len=2000),intent(in)	:: namelist_name
+  character(len=480),intent(in)	:: namelist_name
 
   ! local variables
-  integer(I4B) :: ierr
+  integer   :: ierr
 
   open(UNIT=30, file=trim(namelist_name),form="FORMATTED")
 

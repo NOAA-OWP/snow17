@@ -44,7 +44,6 @@ contains
     character(len = 1024)   :: output_root		    ! base name for output files
     character(len = 1024)   :: snow17_param_file	! name for snow17 parameters
     character(len = 1024)	:: snow_state_out_root  ! name for snow17 state output root
-    character(len = 1024)	:: sac_state_out_root	! name for sac state output root
     character(len = 1024)	:: snow_state_in_root	! name for snow17 state input root
     integer(I4B)            :: model_timestep       ! model timestep in seconds
   
@@ -58,7 +57,7 @@ contains
     namelist / SNOW17_CONTROL / forcing_root, output_root, main_id, n_hrus, output_hrus, &
                   startdatehr, enddatehr, &
                   snow17_param_file, warm_start_run, write_states, model_timestep, &
-			      snow_state_out_root,snow_state_in_root, elev, latitude, hru_id, hru_area
+			      snow_state_out_root,snow_state_in_root   !, elev, latitude, hru_id, hru_area
 
     ! -- read namelist file
     if( .not. ( present(namelist_file) ) ) then
@@ -71,10 +70,10 @@ contains
     close(333)
 
     ! -- transfer to namelist datatype
-    this%forcing_root        = forcing_root
-    this%output_root         = output_root
     this%main_id             = main_id
     this%n_hrus              = n_hrus
+    this%forcing_root        = forcing_root
+    this%output_root         = output_root
     this%output_hrus         = output_hrus
     this%startdatehr         = startdatehr
     this%enddatehr           = enddatehr
@@ -84,10 +83,10 @@ contains
     this%model_timestep      = model_timestep
     this%snow_state_out_root = snow_state_out_root
     this%snow_state_in_root  = snow_state_in_root
-    this%elev                = elev
-    this%latitude            = latitude
-    this%hru_id              = hru_id
-    this%hru_area            = hru_area
+    !this%elev                = elev
+    !this%latitude            = latitude
+    !this%hru_id              = hru_id
+    !this%hru_area            = hru_area
 
   end subroutine readNamelist
 

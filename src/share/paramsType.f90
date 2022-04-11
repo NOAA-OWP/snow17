@@ -1,26 +1,24 @@
-module parametersType
+module parametersModule
 
 use namelistRead, only: namelist_type
 
 implicit none
 save
-private
+
+! -- variable declarations
+
+! scalars/arrays?
 
 type, public :: parameters_type
 
-  !real, allocatable, dimension(:) :: bexp                      ! b parameter
-  !real, allocatable, dimension(:) :: smcmax                    ! porosity (volumetric)
-  !real, dimension(12)             :: LAIM                      ! monthly LAI
-  !real                            :: LAI
-
   ! Snow17 model params in the snow param file
-  character(len = 20), dimension(:), allocatable :: hru_id   ! local hru id
-  real(dp), dimension(:), allocatable            :: hru_area   ! sq-km, needed for combination & routing conv.
-  real(dp), dimension(:), allocatable            :: latitude   ! decimal degrees
-  real(dp), dimension(:), allocatable            :: elev       ! m
-  real(sp), dimension(:), allocatable            :: scf,mfmax,mfmin,uadj,si,pxtemp
-  real(sp), dimension(:), allocatable            :: nmf,tipm,mbase,plwhc,daygm
-  real(sp), dimension(11)                        :: adc   ! AW can we keep this the same for all HUCs, for now?
+  character(len = 20), dimension(:), allocatable :: hru_id     ! local hru ids for multiple hrus
+  real, dimension(:), allocatable                :: hru_area   ! sq-km, needed for combination & routing conv.
+  real, dimension(:), allocatable                :: latitude   ! centroid latitude of hru (decimal degrees)
+  real, dimension(:), allocatable                :: elev       ! mean elevation of hru (m)
+  real, dimension(:), allocatable                :: scf,mfmax,mfmin,uadj,si,pxtemp
+  real, dimension(:), allocatable                :: nmf,tipm,mbase,plwhc,daygm
+  real, dimension(11)                            :: adc        ! keep this the same vector for all hrus, for a start?
 
   contains
 
@@ -34,31 +32,42 @@ contains
   subroutine Init(this, namelist)
 
     implicit none
-    class(parameters_type)           :: this
-    class(namelist_type), intent(in) :: namelist
+    class(parameters_type), intent(out)  :: this
+    class(namelist_type), intent(in)     :: namelist
     
     ! local variables
+    integer                              :: n_hrus
+    
+    ! --- code ---
     n_hrus = namelist%n_hrus    ! could use associate here
 
     ! allocate variables
-    allocate(hru_id(n_hrus))
-    allocate(hru_area(n_hrus))
-    allocate(latitude(n_hrus))
-    allocate(elev(n_hrus))
-    allocate(scf(n_hrus))
-    allocate(mfmax(n_hrus))
-    allocate(mfmin(n_hrus))
-    allocate(uadj(n_hrus))
-    allocate(si(n_hrus))
-    allocate(pxtemp(n_hrus))
-    allocate(nmf(n_hrus))
-    allocate(tipm(n_hrus))
-    allocate(mbase(n_hrus))
-    allocate(plwhc(n_hrus))
-    allocate(daygm(n_hrus))    
-    
-    ! assign from input parameters file
-    call read_snow17_parameters(this, namelist%snow17_param_file)
+    allocate(this%hru_id(n_hrus))
+    allocate(this%hru_area(n_hrus))
+    allocate(this%latitude(n_hrus))
+    allocate(this%elev(n_hrus))
+    allocate(this%scf(n_hrus))
+    allocate(this%mfmax(n_hrus))
+    allocate(this%mfmin(n_hrus))
+    allocate(this%uadj(n_hrus))
+    allocate(this%si(n_hrus))
+    allocate(this%pxtemp(n_hrus))
+    allocate(this%nmf(n_hrus))
+    allocate(this%tipm(n_hrus))
+    allocate(this%mbase(n_hrus))
+    allocate(this%plwhc(n_hrus))
+    allocate(this%daygm(n_hrus))    
+    allocate(this%adc1(n_hrus))    
+    allocate(this%adc2(n_hrus))    
+    allocate(this%adc3(n_hrus))    
+    allocate(this%adc4(n_hrus))    
+    allocate(this%adc5(n_hrus))    
+    allocate(this%adc6(n_hrus))    
+    allocate(this%adc7(n_hrus))    
+    allocate(this%adc8(n_hrus))    
+    allocate(this%adc9(n_hrus))    
+    allocate(this%adc10(n_hrus))    
+    allocate(this%adc11(n_hrus))    
     
     ! assign defaults (if any)
     !this%LAI        = huge(1.0)
@@ -193,13 +202,13 @@ contains
   
     ! quick check on completeness
     if(n_params_read /= 26) then
-      print *, 'Read ', n_params_read , ' SNOW17 params, but need 26.  Quitting...'
-      stop
+      print *, 'Read ', n_params_read , ' SNOW17 params, but need 26.  Quitting.'; stop
+    else
+      print *, 'Read all 26 SNOW17 params. Continuing...'
     end if
-    !print*, '  -------------------'
+    print*, '  -------------------'
   
     return
   end subroutine read_snow17_params
 
-
-end module parametersType
+end module parametersModule

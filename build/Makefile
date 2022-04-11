@@ -24,9 +24,10 @@ FC   = gfortran
 # PART 1: Assemble all of the various sub-routines
 
 # Define directories
-DRIVER_DIR = $(F_MASTER_DIR)/src/driver/
+driver_dir = $(F_MASTER_DIR)/src/driver/
 snow19_dir = $(F_MASTER_DIR)/src/snow19/
 share_dir  = $(F_MASTER_DIR)/src/share/
+bmi_dir    = $(F_MASTER_DIR)/src/bmi/
 
 # share utilities
 model_UTIL= \
@@ -37,7 +38,10 @@ model_UTIL= \
 		read_namelist.f90 \
 		ascii_io.f90 \
 		day_of_year.f90 \
-		sfc_pressure.f90 
+                forcingType.f90 \ 
+                statesType.f90 \
+                outputType.f90 
+		# sfc_pressure.f90 
 UTIL = $(patsubst %, $(share_dir)/%, $(model_UTIL))
 
 # snow-19 code (fortran 90, different options)
@@ -57,9 +61,25 @@ model_snow19= \
 		exsnow19.f
 snow19 = $(patsubst %, $(snow19_dir)/%, $(model_snow19))
 
+# snow17 driver
+driver_snow17= \
+                driver_bmi.f90
+snow17_drv = $(patsubst %, $(driver_dir)/%, $(driver_snow19))
+
+
+# BMI functions
+bmi_functions= \
+                bmi.f90 \
+                bmi_snow17.f90
+snow17_bmi = $(patsubst %, $(bmi_dir)/%, $(bmi_functions))
+
+
+
 # ... and stitch it all together...
-utilities   = $(UTIL)
-model = $(snow19)
+utilities = $(UTIL)
+model     = $(snow19)
+
+MORE TO DO HERE
 
 #========================================================================
 # PART 2: Define the libraries, driver programs, and executables
