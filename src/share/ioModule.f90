@@ -7,20 +7,27 @@ module ioModule
   
 contains
 
-  ! ==== Open forcings files and read past header
-  SUBROUTINE open_init_forcing_files(namelist, runinfo, parameters)
+  ! ==== Open forcings files and read to start of first record
+  SUBROUTINE open_and init_forcing_files(namelist, runinfo, parameters)
     implicit none
     type (namelist_type),    intent(in)   :: namelist
     type (runinfo_type),     intent(in)   :: runinfo
     type (parameters_type),  intent(in)   :: parameters
     
     ! local variables
-    character*256  :: filename
+    character*480  :: filename
     logical        :: lexist ! logical for whether the file specified by filename exists
-    integer        :: ierr   ! error code returned by open(iostat = ierr)
+    integer        :: ierr=0   ! error code returned by open(iostat = ierr)
     integer        :: nh     ! loop counter
+    
+    ! local variables
+    integer(I4B)				:: yr,mnth,dy,hr
+    integer(I4B)				:: read_flag
+    real(DP)			        :: pcp,tma,tmn,pet
+
 
     ! --- code ------------------------------------------------------------------
+    found_start = 0
     do nh=1, runinfo%n_hrus
 
       ! make filename to read
@@ -44,13 +51,34 @@ contains
       
       ! Skip 1-line header
       read(runinfo%forcing_fileunits(nh), *)
+      
+      ! advance to first record needed in simulation 
+      do while(ios .ge. 0)
+        ! forcing could have any format (not fixed width)
+        read (UNIT=runinfo%forcing_fileunits(nh), FMT=*, IOSTAT=ierr) yr, mnth, dy, hr, pcp, tma, tmn, pet
 
-    end do   ! end loop over sub-units
+        if(yr .eq. runinfo%start_year .and. mnth .eq. runinfo%start_month .and. dy .eq. runinfo%start_day .and. hr .eq. runinfo%start_hour) then
+          found_start = found_start + 1
+          exit    ! break out of the loop
+        end if
+        
+      end do
+      
+      ! backspace the file to the previous record
+      backspace runinfo%forcing_fileunits(nh)
+
+    end do  ! end loop over snow bands
     
-  END SUBROUTINE open_init_forcing_files
+    ! error out if start of all forcings files not found
+    if (found_start /= runinfo%n_hrus) then
+      print*, 'ERROR: found the starting date in only', found_start, ' out of', runinfo%n_hrus, ' forcing files.  Quitting.'
+      stop
+    endif
+
+  END SUBROUTINE open_and_init_forcing_files
 
   ! ==== Open output files and write header
-  SUBROUTINE open_init_output_files(namelist, runinfo, parameters)
+  SUBROUTINE open_and_init_output_files(namelist, runinfo, parameters)
     implicit none
     type (namelist_type),    intent(in)   :: namelist
     type (runinfo_type),     intent(in)   :: runinfo
@@ -89,7 +117,7 @@ contains
 
     end do   ! end loop over sub-units
     
-  END SUBROUTINE  open_init_output_files
+  END SUBROUTINE  open_and_init_output_files
 
 
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
@@ -202,10 +230,12 @@ end subroutine write_snow17_state
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !
 ! AWW modified to read PET instead of dayl, vpd and swdown
 ! AWW modified to return basin area in sq km
+!subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_id)
 subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_id)
   use nrtype
-  use def_namelists, only: forcing_root, start_year,start_day,start_month, &
-                        end_year,end_month,end_day
+  !use def_namelists, only: forcing_root, start_year,start_day,start_month, &
+  !                      end_year,end_month,end_day
+  use namelistModule 
 
   implicit none
 
@@ -217,11 +247,10 @@ subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_
   integer(I4B),dimension(:),intent(out)	:: month
   integer(I4B),dimension(:),intent(out)	:: day
   integer(I4B),dimension(:),intent(out)	:: hour
-  real(dp),dimension(:),intent(out)	:: tmax   ! deg C
-  real(dp),dimension(:),intent(out)	:: tmin    ! deg C
-  real(dp),dimension(:),intent(out)	:: precip  ! mm/day
-  real(dp),dimension(:),intent(out)	:: pet   ! mm/day
-
+  real(dp),dimension(:),intent(out)	    :: tmax   ! deg C
+  real(dp),dimension(:),intent(out)     :: tmin    ! deg C
+  real(dp),dimension(:),intent(out)	    :: precip  ! mm/day
+  real(dp),dimension(:),intent(out)	    :: pet   ! mm/day
 
   ! local variables
   integer(I4B)				:: i,ios=0
@@ -231,6 +260,12 @@ subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_
   real(DP)				:: pcp,tma,tmn,pm_pet
 
   character(len = 420) :: filename
+  
+  do nh=1, runinfo%n_hrus
+
+      ! make filename to read
+      filename = trim(namelist%output_root) // trim(parameters%hru_id(nh))	
+  
 
   ! make filename to read
   filename = trim(forcing_root) // trim(curr_hru_id)	

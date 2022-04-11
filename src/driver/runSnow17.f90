@@ -63,7 +63,7 @@ contains
       !---------------------------------------------------------------------
 #ifndef NGEN_FORCING_ACTIVE
       !call open_forcing_files(namelist%input_filename)
-      call open_init_forcing_files(namelist, runinfo, parameters)
+      call open_and_init_forcing_files(namelist, runinfo, parameters)
 #endif
       
       !---------------------------------------------------------------------
@@ -72,7 +72,7 @@ contains
       !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
       !call initialize_output(namelist%output_filename, runinfo%ntime, levels%nsoil, levels%nsnow)
-      call open_init_output_files(namelist, runinfo, parameters)
+      call open_and_init_output_files(namelist, runinfo, parameters)
 #endif
       
     end associate ! terminate the associate block
@@ -90,6 +90,7 @@ contains
 
     model%runinfo%itime    = model%runinfo%itime + 1 ! increment the integer time by 1
     model%runinfo%time_dbl = dble(model%runinfo%time_dbl + model%runinfo%dt) ! increment model time in seconds by DT
+
   END SUBROUTINE advance_in_time
   
 
@@ -97,7 +98,8 @@ contains
   ! == Run the model for one timestep and all spatial sub-units ==============================================
   SUBROUTINE solve_snow17(model)
     type (noahowp_type), intent (inout) :: model
-    integer, parameter :: iunit        = 10 ! Fortran unit number to attach to the opened file
+    
+    ! local parameters
     integer            :: forcing_timestep  ! integer time step (set to dt) for some subroutine calls
     integer            :: ierr              ! error code for reading forcing data
     integer            :: curr_yr, curr_mo, curr_dy, curr_hr, curr_min, curr_sec  ! current UNIX timestep details
@@ -124,7 +126,7 @@ contains
         ! Read in the forcing data if NGEN_FORCING_ACTIVE is not defined
         !---------------------------------------------------------------------
 #ifndef NGEN_FORCING_ACTIVE
-        call read_forcing_ascii(iunit(nh), runinfo%nowdate, forcing_timestep, forcing%precip, forcing%tair, ierr)
+        call read_forcing_ascii(runinfo%forcing_fileunits(nh), runinfo%nowdate, forcing_timestep, forcing%precip, forcing%tair, ierr)
 #endif
 
         !---------------------------------------------------------------------

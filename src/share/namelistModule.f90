@@ -57,7 +57,7 @@ contains
     namelist / SNOW17_CONTROL / forcing_root, output_root, main_id, n_hrus, output_hrus, &
                   startdatehr, enddatehr, &
                   snow17_param_file, warm_start_run, write_states, model_timestep, &
-			      snow_state_out_root,snow_state_in_root   !, elev, latitude, hru_id, hru_area
+			      snow_state_out_root,snow_state_in_root
 
     ! -- read namelist file
     if( .not. ( present(namelist_file) ) ) then
@@ -83,10 +83,6 @@ contains
     this%model_timestep      = model_timestep
     this%snow_state_out_root = snow_state_out_root
     this%snow_state_in_root  = snow_state_in_root
-    !this%elev                = elev
-    !this%latitude            = latitude
-    !this%hru_id              = hru_id
-    !this%hru_area            = hru_area
 
   end subroutine readNamelist
 
