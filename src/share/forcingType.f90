@@ -26,8 +26,8 @@ contains
 
   subroutine Init(this, namelist)
 
-    class(forcing_type), intent(out) :: this
     type(namelist_type), intent(in)  :: namelist
+    class(forcing_type), intent(out) :: this
 
     ! local variables
     integer             :: n_hrus
@@ -36,10 +36,6 @@ contains
     n_hrus = namelist%n_hrus    ! could use associate here
     
     ! -- variable allocations (time dim not needed since forcings are one-rec scalars)
-    !allocate(this%tair       (1:namelist%n_hrus))
-    !allocate(this%precip     (1:namelist%n_hrus))
-    !allocate(this%precip_scf (1:namelist%n_hrus))
-    !allocate(this%pa         (1:namelist%n_hrus))
     allocate(this%tair       (n_hrus))
     allocate(this%precip     (n_hrus))
     allocate(this%precip_scf (n_hrus))
@@ -50,9 +46,9 @@ contains
     this%precip_scf(:)     = huge(1.0)
     this%tair(:)           = huge(1.0)
     this%pa(:)             = huge(1.0)
-    this%precip_comb       = huge(1.0)
-    this%tair_comb         = huge(1.0)
-    this%precip_scf_comb   = huge(1.0)
+    this%precip_comb       = 0.0
+    this%tair_comb         = 0.0
+    this%precip_scf_comb   = 0.0
     
     ! -- estimate derived variables
 

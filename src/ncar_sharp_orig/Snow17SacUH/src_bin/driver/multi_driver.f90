@@ -46,7 +46,7 @@ program multi_driver
   character(len=2000)	:: namelist_name  !command line arg for namelist file
   character(len=2000)	:: combined_output_filename  ! AWW constructed on the fly
   character(len=2000)	:: hru_output_filename  ! AWW constructed on the fly
-  character(len=10)	:: state_date_str  ! AWW string to match date in input states
+  character(len=10)	    :: state_date_str  ! AWW string to match date in input states
 
   integer(I4B) :: dt           ! model timestep (seconds)
                                ! moved here from namelist until model can be validated at 

@@ -16,9 +16,12 @@ type, public :: parameters_type
   real, dimension(:), allocatable                :: hru_area   ! sq-km, needed for combination & routing conv.
   real, dimension(:), allocatable                :: latitude   ! centroid latitude of hru (decimal degrees)
   real, dimension(:), allocatable                :: elev       ! mean elevation of hru (m)
-  real, dimension(:), allocatable                :: scf,mfmax,mfmin,uadj,si,pxtemp
-  real, dimension(:), allocatable                :: nmf,tipm,mbase,plwhc,daygm
+  real, dimension(:), allocatable                :: scf, mfmax, mfmin, uadj, si, pxtemp
+  real, dimension(:), allocatable                :: nmf, tipm, mbase, plwhc, daygm
   real, dimension(11)                            :: adc        ! keep this the same vector for all hrus, for a start?
+  
+  ! derived
+  real                                           :: total_area  ! total basin area used in averaging outputs
 
   contains
 
@@ -70,8 +73,7 @@ contains
     allocate(this%adc11(n_hrus))    
     
     ! assign defaults (if any)
-    !this%LAI        = huge(1.0)
-    !this%VEG        = .true.
+    !this%total_area  = huge(1.0)
 
   end subroutine Init
 
@@ -89,7 +91,7 @@ contains
     character(len=50)		:: param
     integer    	            :: ios=0   ! specify i4b with nrtype?
     integer                 :: pos
-    integer                 :: n_params_read  ! count number read
+    integer                 :: n_params_read, nh  ! counters
   
     ! open parameter file
     open(unit=51,file=trim(param_file_name),status='old')
@@ -207,6 +209,12 @@ contains
       print *, 'Read all 26 SNOW17 params. Continuing...'
     end if
     print*, '  -------------------'
+    
+    ! calculate derived parameters
+    this%total_area = 0.0
+    do nh=1, runinfo%n_hrus
+      this%total_area = this%total_area + this%hru_area(nh)
+    end do
   
     return
   end subroutine read_snow17_params

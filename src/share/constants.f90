@@ -1,10 +1,9 @@
 MODULE constants
   use nrtype
-
   implicit none
 
-  real(DP), parameter	:: sec_day=86400.0_dp			!seconds in a day
-  real(DP), parameter	:: sec_hour=3600.0_dp			!seconds in an hour
+  real(DP), parameter	:: sec_per_day=86400.0_dp		!seconds in a day
+  real(DP), parameter	:: sec_per_hour=3600.0_dp		!seconds in an hour
   real(DP), parameter	:: cfs_cms=0.0283168_dp  		!cubic feet per second to cubic meters per second
   real(DP), parameter	:: c_p=1.013e-3_dp			!specific heat of air at constant pressure (MJ kg-1 oC-1)
   real(DP), parameter	:: l_v=2.501_dp				!latent heat of vaporization (MJ kg-1)
