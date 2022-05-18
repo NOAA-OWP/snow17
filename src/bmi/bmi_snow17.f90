@@ -155,8 +155,8 @@ contains
     character (*), pointer, intent(out) :: names(:)
     integer :: bmi_status
 
-    output_items(2) = 'raim'     ! rain plus snowmelt (mm/s)
-    output_items(6)  = 'sneqv'   ! snow water equivalent (mm)
+    output_items(2) = 'raim'    ! rain plus snowmelt (mm/s)
+    output_items(6) = 'sneqv'   ! snow water equivalent (mm)
 
     names => output_items
     bmi_status = BMI_SUCCESS
@@ -191,7 +191,9 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    time = 0.d0
+    !time = 0.d0                                            ! time relative to start time (s) == 0
+    time = dble(this%model%runinfo%start_datetime)         ! using unix time (s)
+    
     bmi_status = BMI_SUCCESS
   end function snow17_start_time
 
@@ -201,7 +203,9 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    time = dble(this%model%runinfo%ntime * this%model%runinfo%dt)
+    !time = dble(this%model%runinfo%ntime * this%model%runinfo%dt)  ! time relative to start time (s)
+    time = dble(this%model%runinfo%end_datetime)                    ! using unix time (s)
+    
     bmi_status = BMI_SUCCESS
   end function snow17_end_time
 
@@ -211,7 +215,8 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    time = dble(this%model%runinfo%time_dbl)
+    !time = dble(this%model%runinfo%time_dbl)           ! time from start of run (s)
+    time = dble(this%model%runinfo%curr_datetime)    ! unix time (s)
     bmi_status = BMI_SUCCESS
   end function snow17_current_time
 
@@ -252,17 +257,30 @@ contains
     double precision :: n_steps_real
     integer :: n_steps, i, s
 
-    if (time < this%model%runinfo%time_dbl) then
+    ! new code to work with unix time convention
+    ! check to see if desired time to advance to is earlier than current time (can't go backwards)
+    if (time < this%model%runinfo%curr_datetime) then
        bmi_status = BMI_FAILURE
        return
     end if
-
-    n_steps_real = (time - this%model%runinfo%time_dbl) / this%model%runinfo%dt
-    n_steps = floor(n_steps_real)
-    do i = 1, n_steps
+    ! otherwise try to advance to end time
+    do while ( time < this%model%runinfo%end_datetime )
        s = this%update()
     end do
-!     call update_frac(this, n_steps_real - dble(n_steps)) ! NOT IMPLEMENTED
+
+    ! original code working with time run convention from 0 to n*dt end_time
+    !if (time < this%model%runinfo%time_dbl) then
+    !   bmi_status = BMI_FAILURE
+    !   return
+    !end if
+
+    !n_steps_real = (time - this%model%runinfo%time_dbl) / this%model%runinfo%dt
+    !n_steps = floor(n_steps_real)
+    !do i = 1, n_steps
+    !   s = this%update()
+    !end do
+    !     call update_frac(this, n_steps_real - dble(n_steps)) ! NOT IMPLEMENTED
+    
     bmi_status = BMI_SUCCESS
   end function snow17_update_until
 

@@ -28,8 +28,9 @@ program multi_driver
   !  Local variable(s) 
   !---------------------------------------------------------------------
   character (len = 400) :: namelist_file    ! command line argument for namelist file
-  double precision      :: current_time     ! current run time of model in s from beginning
-  double precision      :: end_time         ! end of model simulation time in s
+  double precision      :: current_time     ! current time coordinate of model in s (unixtime)
+  double precision      :: end_time         ! end of model simulation period in s (unixtime)
+  ! note, these times may need to change to time relative to some other start
   integer               :: status           ! returns status values (function return codes)
 
   !---------------------------------------------------------------------
@@ -50,9 +51,10 @@ program multi_driver
   !---------------------------------------------------------------------
   status = m%get_current_time(current_time)
   status = m%get_end_time(end_time)
-  print*, end_time
+  print*,'----'; print*, 'Running model', (end_time - current_time)/m%model%runinfo%dt, ' timesteps'; print*,'----'
   
-  ! loop through while current time <= end time
+  
+  ! loop through while current time <= end time (
   print*, "Running..."
   do while (current_time < end_time)
     status = m%update()                       ! run the model one time step
