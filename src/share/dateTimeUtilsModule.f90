@@ -1,7 +1,7 @@
 ! module containing utilities for parsing dates, times (and incidentally strings)
 ! copied from the GMET code at https://github.com/NCAR/GMET/
 
-module DateTimeUtilsModule
+module dateTimeUtilsModule
 
   implicit none
   public
@@ -1208,6 +1208,4 @@ contains
 
 !**********************************************************************
  
-end module DateTimeUtilsModule
- 
- 
+end module dateTimeUtilsModule

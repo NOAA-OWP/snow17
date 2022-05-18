@@ -1,4 +1,4 @@
-module ForcingModule
+module forcingModule
 
   use OptionsType
   use ParametersType
@@ -31,4 +31,4 @@ contains
 
   END SUBROUTINE ForcingMain   
 
-end module ForcingModule
+end module forcingModule

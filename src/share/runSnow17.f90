@@ -1,6 +1,5 @@
 ! module for executing Snow17 model
-
-module RunModule
+module runModule
   
   use namelistModule
   use ioModule
@@ -86,8 +85,8 @@ contains
     call solve_snow17(model)
 
     ! -- advance run time info
-    model%runinfo%itime    = model%runinfo%itime + 1 ! increment the integer time by 1
-    !model%runinfo%time_dbl = dble(model%runinfo%time_dbl + model%runinfo%dt)        ! increment relative model run time in seconds by DT
+    model%runinfo%itime         = model%runinfo%itime + 1 ! increment the integer time by 1
+    !model%runinfo%time_dbl     = dble(model%runinfo%time_dbl + model%runinfo%dt)        ! increment relative model run time in seconds by DT
     model%runinfo%curr_datetime = model%runinfo%curr_datetime + model%runinfo%dt     ! increment unix model run time in seconds by DT
     call unix_to_datehr (runinfo%curr_datetime, runinfo%curr_datehr)       ! update datehr field as well
     call unix_to_date_elem (runinfo%curr_datetime, runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, &
@@ -194,4 +193,4 @@ contains
   
   END SUBROUTINE cleanup
 
-end module RunModule              
+end module runModule              

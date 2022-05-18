@@ -111,9 +111,10 @@ contains
       end if 
 
       ! update other forcing fields (derived)
-      forcing%tair(nh)	   = (tmx + tmn)/2
-      forcing%precip_scf(nh) = forcing%precip(nh) * parameters%scf(nh)
-    
+      forcing%tair(nh)	   = (tmx + tmn)/2                               ! calc avg temp from tmax and tmin
+                                                                         ! (can update this w/ option for reading tair)
+      forcing%precip_scf(nh) = forcing%precip(nh) * parameters%scf(nh)   ! scale input precip by snow correction factor
+                                                                         ! (note: this is for output; pcp is scaled in pack19
     end do  ! end loop across snowbands (hrus)
 
     return
