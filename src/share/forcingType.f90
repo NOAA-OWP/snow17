@@ -17,25 +17,20 @@ type, public :: forcing_type
 
   contains
 
-    procedure, public   :: Init
+    procedure, public   :: initForcing
 
 end type forcing_type
 
 contains   
 
-  subroutine Init(this, namelist)
-  
+  subroutine initForcing(this, namelist)
+
+    use defNamelist
     implicit none
 
     class(forcing_type), intent(out) :: this
     type(namelist_type), intent(in)  :: namelist
 
-    ! local variables
-    integer             :: n_hrus
-
-    ! code
-    n_hrus = namelist%n_hrus    ! could use associate here
-    
     ! -- variable allocations (time dim not needed since forcings are one-rec scalars)
     allocate(this%tair       (n_hrus))
     allocate(this%precip     (n_hrus))
@@ -51,7 +46,7 @@ contains
     this%tair_comb         = 0.0
     this%precip_scf_comb   = 0.0
     
-  end subroutine Init
+  end subroutine initForcing
   
 
 end module forcingType

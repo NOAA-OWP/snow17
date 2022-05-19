@@ -14,7 +14,7 @@ program multi_driver
   !  Modules
   !  Only the BMI modules need to be exposed
   !---------------------------------------------------------------------
-  use bmi_snow17
+  use bmi_snow17_module
   use bmif_2_0
 
   implicit none
@@ -30,6 +30,7 @@ program multi_driver
   character (len = 400) :: namelist_file    ! command line argument for namelist file
   double precision      :: current_time     ! current time coordinate of model in s (unixtime)
   double precision      :: end_time         ! end of model simulation period in s (unixtime)
+  double precision      :: dt               ! length of timestep in s (unixtime)
   ! note, these times may need to change to time relative to some other start
   integer               :: status           ! returns status values (function return codes)
 
@@ -38,8 +39,9 @@ program multi_driver
   !  Call the initialize_from_file() subroutine in src/RunSnow17.f90
   !---------------------------------------------------------------------
   print*, "Initializing..."
-  call get_command_argument(1, namelist_file)
-  if( .not. ( present(namelist_file) ) ) then
+  call get_command_argument(1, namelist_file, status=status)
+  !if( .not. ( present(namelist_file) ) ) then
+  if( .not. ( status /= 0 ) ) then
     namelist_file = "namelist.input"
     print*, 'No namelist filename supplied -- attempting to read default file called namelist.input'
   endif  
@@ -51,7 +53,8 @@ program multi_driver
   !---------------------------------------------------------------------
   status = m%get_current_time(current_time)
   status = m%get_end_time(end_time)
-  print*,'----'; print*, 'Running model', (end_time - current_time)/m%model%runinfo%dt, ' timesteps'; print*,'----'
+  status = m%get_time_step(dt)
+  print*,'----'; print*, 'Running model', (end_time - current_time)/dt, ' timesteps'; print*,'----'
   
   
   ! loop through while current time <= end time (
@@ -69,4 +72,4 @@ program multi_driver
   status = m%finalize()
   print*, "DONE"
 
-end program
+end program multi_driver

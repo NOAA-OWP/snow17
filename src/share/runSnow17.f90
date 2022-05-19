@@ -11,7 +11,7 @@ module runModule
 
   implicit none
 
-  type :: snow17_type
+  type, public :: snow17_type
     type(namelist_type)   :: namelist
     type(runinfo_type)    :: runinfo
     type(parameters_type) :: parameters
@@ -40,10 +40,11 @@ contains
       !-----------------------------------------------------------------------------------------
       call namelist%readNamelist(config_file)
 
-      call runinfo%Init(namelist)        ! initialize run space-time info
-      call forcing%Init(namelist)        ! initialize forcing data type/structure
-      call modelvar%Init(namelist)       ! initialize model states (incl. restarts)
-      call parameters%Init(namelist)     ! read and/or initialize parameters
+      call runinfo%initInfo(namelist)        ! initialize run space-time info
+      call forcing%initForcing(namelist)        ! initialize forcing data type/structure
+      call modelvar%initModelVar(namelist)       ! initialize model states (incl. restarts)
+      !call parameters%Init(namelist)     ! read and/or initialize parameters
+      call parameters%initParams(namelist)     ! read and/or initialize parameters
       
       ! read parameters from input file
       call read_snow17_parameters(parameters, namelist%snow17_param_file, runinfo)

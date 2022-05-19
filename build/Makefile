@@ -110,7 +110,7 @@ snow17_bmi    = $(patsubst %, $(bmi_dir)/%, $(bmi_functions))
 
 # --- snow17 driver
 driver_snow17 = driver_bmi.f90
-snow17_drv    = $(patsubst %, $(driver_dir)/%, $(driver_snow19))
+snow17_drv    = $(patsubst %, $(driver_dir)/%, $(driver_snow17))
 
 
 # --- prepare to stitch it all together      # check just using the original names ... this does nothing?
