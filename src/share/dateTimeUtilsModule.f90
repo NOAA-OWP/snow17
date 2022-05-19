@@ -422,12 +422,12 @@ contains
  
 !**********************************************************************
  
-  subroutine readline (nunitr, line, ios)
+  subroutine read_one_line (nunitr, line, ios)
  
-! Reads line from unit=nunitr, ignoring blank lines
-! and deleting comments beginning with an exclamation point(!)
+    ! Reads line from unit=nunitr, ignoring blank lines
+    ! and deleting comments beginning with an exclamation point(!)
  
-    character (len=*) :: line
+    character (len=*), intent(out) :: line
     integer :: ios, ipos, nunitr
  
     do
@@ -441,7 +441,7 @@ contains
     end do
     return
  
-  end subroutine readline
+  end subroutine read_one_line
  
 !**********************************************************************
  
@@ -926,7 +926,7 @@ contains
     min = (i_day/60) - (hour*60)
     sec = mod (i_day, 60)
  
-  end subroutine unix_to_date
+  end subroutine unix_to_date_elem
   
   ! convert unixtime to date-hr string (YYYYMMDDHH)
   subroutine unix_to_datehr (uxtime, datehr)
@@ -954,7 +954,7 @@ contains
     hour = i_day / 3600
     !min = (i_day/60) - (hour*60)    ! expand to more time elements if needed
     !sec = mod (i_day, 60)
-    write(datehr ,'(I0.4,I0.2,I0.2,I0.2)') yr, mnth, dy, hr)
+    write(datehr ,'(I0.4,I0.2,I0.2,I0.2)') year, month, day, hour
  
   end subroutine unix_to_datehr
  

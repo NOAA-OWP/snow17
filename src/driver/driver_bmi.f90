@@ -41,7 +41,7 @@ program multi_driver
   call get_command_argument(1, namelist_file)
   if( .not. ( present(namelist_file) ) ) then
     namelist_file = "namelist.input"
-    print*, 'No namelist filename supplied -- attempting to read namelist.input (default)'
+    print*, 'No namelist filename supplied -- attempting to read default file called namelist.input'
   endif  
   status = m%initialize(namelist_file)
 

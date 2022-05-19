@@ -17,17 +17,18 @@ type, public :: forcing_type
 
   contains
 
-    procedure, public   :: Init         
-    procedure, private  :: sfc_pressure
+    procedure, public   :: Init
 
 end type forcing_type
 
 contains   
 
   subroutine Init(this, namelist)
+  
+    implicit none
 
-    type(namelist_type), intent(in)  :: namelist
     class(forcing_type), intent(out) :: this
+    type(namelist_type), intent(in)  :: namelist
 
     ! local variables
     integer             :: n_hrus
@@ -50,33 +51,7 @@ contains
     this%tair_comb         = 0.0
     this%precip_scf_comb   = 0.0
     
-    ! -- estimate derived variables
-
-    ! calc sfc_pressure 
-    do nh=1,n_hrus
-      call sfc_pressure(namelist%elev(nh), this%pa(nh))
-    end do
-
   end subroutine Init
-  
-  
-  subroutine sfc_pressure(elevation, sfc_pres)
-    use nrtype
-    use constants, only: sfc_pres_a,sfc_pres_b,sfc_pres_c,sfc_pres_d,sfc_pres_e
-
-    implicit none
-
-    real(DP), intent(in)   :: elevation
-    real(DP), intent(out)  :: sfc_pres
-  
-    sfc_pres = sfc_pres_a * (sfc_pres_b - (sfc_pres_c * (elevation/100.0_dp)) &
-               + (sfc_pres_d*((elevation/100.0_dp)**sfc_pres_e)))   !sfc pres in hPa
-
-    return
-  
-  end subroutine sfc_pressure
-  
-  ! -- could add forcing file open & read routines below
   
 
 end module forcingType

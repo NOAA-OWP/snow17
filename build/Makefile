@@ -3,17 +3,24 @@
 #========================================================================
 
 #========================================================================
-# PART 0: Define directory paths and compiler
+# PART 1: Define directory paths and compiler
 
 # Define main/top directory (parent of /build/)
-# this relative path drops into snow17 parent directory
-F_MASTER_DIR =..
+# Note:  the relative path of "../" drops into snow17 parent directory
+F_MASTER_DIR = ../
 
 # Location of the compiled modules
-MOD_PATH = $(F_MASTER_DIR)/build/
+# MOD_PATH = $(F_MASTER_DIR)/build/ -- not used
+
+# Define directories
+driver_dir = $(F_MASTER_DIR)/src/driver/
+snow19_dir = $(F_MASTER_DIR)/src/snow19/
+share_dir  = $(F_MASTER_DIR)/src/share/
+bmi_dir    = $(F_MASTER_DIR)/src/bmi/
+run_dir    = $(F_MASTER_DIR)/run/
 
 # Define the executable and path
-EXE = $(F_MASTER_DIR)/bin/snow17.exe
+EXE = $(run_dir)/snow17.exe
 
 # Define your Fortran compiler
 #FC  = pgf90
@@ -21,70 +28,9 @@ EXE = $(F_MASTER_DIR)/bin/snow17.exe
 FC   = gfortran
 
 #========================================================================
-# PART 1: Assemble all of the various sub-routines
+# PART 2: Define the libraries and flags (can be an include file)
 
-# Define directories
-driver_dir = $(F_MASTER_DIR)/src/driver/
-snow19_dir = $(F_MASTER_DIR)/src/snow19/
-share_dir  = $(F_MASTER_DIR)/src/share/
-bmi_dir    = $(F_MASTER_DIR)/src/bmi/
-
-# share utilities
-model_UTIL= \
-		nrtype.f90 \
-		constants.f90 \
-		def_namelists.f90 \
-		interfaces.f90 \
-		read_namelist.f90 \
-		ascii_io.f90 \
-		day_of_year.f90 \
-                forcingType.f90 \ 
-                statesType.f90 \
-                outputType.f90 
-		# sfc_pressure.f90 
-UTIL = $(patsubst %, $(share_dir)/%, $(model_UTIL))
-
-# snow-19 code (fortran 90, different options)
-model_snow19= \
-		zero19.f \
-		rout19.f \
-		aesc19.f \
-		melt19.f \
-		SNEW.f \
-		SNOWT.f \
-		SNOWPACK.f \
-		adjc19.f \
-		aeco19.f \
-		updt19.f \
-		SNDEPTH.f \
-		PACK19.f \
-		exsnow19.f
-snow19 = $(patsubst %, $(snow19_dir)/%, $(model_snow19))
-
-# snow17 driver
-driver_snow17= \
-                driver_bmi.f90
-snow17_drv = $(patsubst %, $(driver_dir)/%, $(driver_snow19))
-
-
-# BMI functions
-bmi_functions= \
-                bmi.f90 \
-                bmi_snow17.f90
-snow17_bmi = $(patsubst %, $(bmi_dir)/%, $(bmi_functions))
-
-
-
-# ... and stitch it all together...
-utilities = $(UTIL)
-model     = $(snow19)
-
-MORE TO DO HERE
-
-#========================================================================
-# PART 2: Define the libraries, driver programs, and executables
-
-# Define the libraries and path to include files
+# --- Define the libraries and path to include files
 ifeq "$(FC)" "pgf90"
  LOCL_PATH = /usr/local
  LIB = -L$(LOCL_PATH)/lib 
@@ -97,19 +43,11 @@ ifeq "$(FC)" "gfortran"
  INC = -I ../
 endif
 
-# Define the driver routine
-model_DRIVER = multi_driver.f90
-
-DRIVER = $(patsubst %, $(DRIVER_DIR)/%, $(model_DRIVER))
-
-#========================================================================
-# PART 3: Compile the puppy
-
-# Define flags
+# --- Define flags
 ifeq "$(FC)" "gfortran"
-  FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none
-  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
-  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none
+  FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none -cpp
+  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp
+  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp
 endif
 
 ifeq "$(FC)" "ifort"
@@ -126,10 +64,67 @@ ifeq "$(FC)" "pgf90"
   FLAGS2 = -O3 -r8
 endif
 
-# ----- Compile -----
+
+
+#========================================================================
+# PART 3: Assemble all of the various subroutines
+
+# --- snow-19 code (fortran 90, different options)
+snow19 = \
+		zero19.f \
+		rout19.f \
+		aesc19.f \
+		melt19.f \
+		SNEW.f \
+		SNOWT.f \
+		SNOWPACK.f \
+		adjc19.f \
+		aeco19.f \
+		updt19.f \
+		SNDEPTH.f \
+		PACK19.f \
+		exsnow19.f
+model_snow19 = $(patsubst %, $(snow19_dir)/%, $(snow19))
+
+
+# -- share utilities and code used by the driver in running the model
+run_util = \
+	nrtype.f90 \
+	constants.f90 \
+	namelistModule.f90 \
+        parametersType.f90 \
+        forcingType.f90 \
+        \
+        dateTimeUtilsModule.f90 \
+        runInfoType.f90 \
+        modelVarType.f90 \
+        ioModule.f90 \
+        runSnow17.f90 
+#        interfaces.f90 \
+
+model_run = $(patsubst %, $(share_dir)/%, $(run_util))
+
+# --- BMI functions used by the driver to run the model
+bmi_functions = bmi.f90 bmi_snow17.f90
+snow17_bmi    = $(patsubst %, $(bmi_dir)/%, $(bmi_functions))
+
+# --- snow17 driver
+driver_snow17 = driver_bmi.f90
+snow17_drv    = $(patsubst %, $(driver_dir)/%, $(driver_snow19))
+
+
+# --- prepare to stitch it all together      # check just using the original names ... this does nothing?
+run_code = $(model_run)
+model    = $(model_snow19)
+bmi      = $(snow17_bmi)
+
+
+#========================================================================
+# PART 4: Compile the puppy
 
 all: model link clean 
-debug: model_debug link 
+debug: model_debug link
+devel: model link 
 
 check:
 	echo test
@@ -138,11 +133,11 @@ check:
 # compile model code
 model:
 	$(FC) $(FLAGS2) -c $(model) $(INC)
-	$(FC) $(FLAGS) -c $(utilities) $(DRIVER) $(INC)
+	$(FC) $(FLAGS) -c $(run_code) $(bmi) $(snow17_drv) $(INC)
 
 model_debug:
 	$(FC) $(FLAGS2) -g -fcheck=all -c $(model) $(INC)
-	$(FC) $(FLAGS) -g -fcheck=all -c $(utilities) $(DRIVER) $(INC)
+	$(FC) $(FLAGS) -g -fcheck=all -c $(run_code) $(bmi) $(snow17_drv) $(INC)
 
 # link routines
 link:

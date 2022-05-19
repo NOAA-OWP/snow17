@@ -1,7 +1,8 @@
 ! AWW:  this code file just contains interfaces for functions & subs 
-! AWW:  used to be called 'gauge_calib'
 
 module interfaces
+
+
 
   interface 
 
@@ -60,7 +61,7 @@ module interfaces
 
     subroutine write_snow17_state(year,month,day,hour,cs,tprev,sim_length,curr_hru_id)
       use nrtype
-      use def_namelists, only: snow_state_out_root
+      use defNamelist, only: snow_state_out_root
       !input variables
       character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
       integer(I4B),dimension(:),intent(in)	:: year
@@ -74,7 +75,7 @@ module interfaces
 
     subroutine read_snow17_state(state_date_str, cs,tprev,curr_hru_id)
       use nrtype
-      use def_namelists, only: snow_state_in_root
+      use defNamelist, only: snow_state_in_root
       ! input variables
       character(len = 10), intent(in) :: state_date_str  ! AWW string to match date in input states
       character(len = 20), intent(in) :: curr_hru_id	! HRU extension for snow state filename
@@ -87,8 +88,7 @@ module interfaces
     ! AWW mod to just read PET
     subroutine read_areal_forcing(year,month,day,hour,tmin,tmax,precip,pet,curr_hru_id)
       use nrtype
-      use def_namelists, only: forcing_root, start_year,start_day,start_month, &
-                        end_year,end_month,end_day
+      use defNamelist, only: forcing_root, start_datehr, end_datehr
       !output variables
       character(len = 20), intent(in) 	:: curr_hru_id	! HRU extension for state fname
       integer(I4B),dimension(:),intent(out)	:: year
@@ -101,14 +101,22 @@ module interfaces
       real(dp),dimension(:),intent(out)	:: precip    
     end subroutine read_areal_forcing
 
-    subroutine read_snow17_params(param_name,n_hrus)
+    subroutine read_snow17_params(param_name, n_hrus)
       use nrtype
-      use def_namelists, only: scf,mfmax,mfmin,uadj,si,pxtemp,nmf,&
-                        tipm,mbase,plwhc,daygm,adc
+      use parametersType, only: parameters_type
       !input variables
       character(len=1024),intent(in)	:: param_name
       integer(I4B),intent(in) :: n_hrus
     end subroutine read_snow17_params
+    
+    SUBROUTINE write_output_vec(namelist, runinfo, parameters, forcing, modelvar)
+      implicit none
+      class (namelist_type),    intent(in)   :: namelist
+      class (runinfo_type),     intent(in)   :: runinfo
+      class (parameters_type),  intent(in)   :: parameters
+      class (forcing_type),     intent(in)   :: forcing
+      class (modelvar_type),    intent(in)   :: modelvar
+    end subroutine write_output_vec
 
   end interface
 end module interfaces
