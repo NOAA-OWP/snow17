@@ -1,9 +1,6 @@
 module modelVarType
-# 
 
   use namelistModule, only: namelist_type
-  use parametersModule
-  use ioModule
 
   implicit none
   save
@@ -18,7 +15,7 @@ module modelVarType
   
     ! other states and carryover variables
     real, dimension(:), allocatable    :: tprev
-    real, dimension(:,:), allocatable  :: cs     ! 19-element vector per HRU used in snow19: (n_hrus,19)
+    real, dimension(:,:), allocatable  :: cs     ! 19-element vector per HRU used in snow19: (n_hrus, 19)
   
     ! areally-averaged variables for output 
     real                               :: sneqv_comb, snowh_comb, snow_comb, raim_comb
@@ -26,7 +23,6 @@ module modelVarType
     contains
 
       procedure, public  :: Init 
-      procedure, public  :: assignStates  
 
   end type modelvar_type
 
@@ -55,31 +51,11 @@ module modelVarType
     this%snowh_comb    = 0.0
     this%snow_comb     = 0.0
     this%raim_comb     = 0.0 
+    this%tprev(:)      = 0.0      ! prev. temp is needed
+    this%cs(:,:)       = 0.0      ! prev. temp is needed
     
     ! -- estimate derived variables (if any)
 
   end subroutine Init
-  
-  subroutine assignStates(this, namelist)
-
-    ! define variables
-    class(modelvar_type), intent(inout) :: this
-    type(namelist_type), intent(in)     :: namelist
-
-    ! set single precision sac state variables to initial values
-    if(namelist%warm_start_run .eq. 0) then
-      ! we are not warm starting from a state file
-      this%cs(:,1)    = 0.0      ! first/main component of cs() array is SWE (model 'WE'); could do something different here
-      this%cs(:,2:19) = 0.0      !   set the rest of cs() to zero
-      this%tprev(:)   = 0.0      ! prev. temp is needed
-      
-    else
-      ! we *ARE* warm-starting from a state file
-      ! read in external state files and overwrites namelist state variables
-       call read_snow17_state(modelvar, namelist, parameters)            ! SUBR. STILL NEEDS CHECKING
-
-    endif
-
-  end subroutine assignStates
 
 end module modelVarType

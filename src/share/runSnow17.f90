@@ -3,13 +3,12 @@ module runModule
   
   use namelistModule
   use ioModule
-  use utilitiesModule
   use dateTimeUtilsModule
-  use parametersModule
-  
-  !use interfaces, only: sfc_pressure
-  !use constants, only: sfc_pres_a,sfc_pres_b,sfc_pres_c,sfc_pres_d,sfc_pres_e
-  
+  use parametersType
+  use runInfoType
+  use forcingType
+  use modelVarType
+
   implicit none
 
   type :: snow17_type
@@ -28,7 +27,7 @@ contains
     implicit none
     
     type(snow17_type), target, intent(out) :: model
-    character(len=*), intent (in) :: config_file ! namelist file from command line argument
+    character(len=*), intent (in)          :: config_file ! namelist file from command line argument
     
     associate(namelist   => model%namelist,   &
               runinfo    => model%runinfo,    &
@@ -41,18 +40,14 @@ contains
       !-----------------------------------------------------------------------------------------
       call namelist%readNamelist(config_file)
 
-      call runinfo%Init(namelist)           ! initialize run space-time info
-      call parameters%Init(namelist)        ! read and/or initialize parameters
-      call forcing%Init(namelist)           ! initialize forcing data type/structure
-      call modelvar%Init(namelist)          ! initialize model states (incl. restarts)
-      call output%Init(namelist)            ! initialize output data type/structure
+      call runinfo%Init(namelist)        ! initialize run space-time info
+      call forcing%Init(namelist)        ! initialize forcing data type/structure
+      call modelvar%Init(namelist)       ! initialize model states (incl. restarts)
+      call parameters%Init(namelist)     ! read and/or initialize parameters
       
       ! read parameters from input file
-      call parameters%read_snow17_parameters(this, namelist%snow17_param_file)
-
-      ! initialize model states (and read state files if any)
-      call modelvar%assignStates(this, namelist%snow17_param_file)
-         
+      call read_snow17_parameters(parameters, namelist%snow17_param_file, runinfo)
+        
       !---------------------------------------------------------------------
       ! Open the forcing file
       ! Comp. dir. NGEN_FORCING_ACTIVE indicates Nextgen forcing is used
@@ -68,6 +63,15 @@ contains
       !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
       call open_and_init_output_files(namelist, runinfo, parameters)
+#endif
+
+#ifndef NGEN_RESTART_ACTIVE
+      ! we *ARE* warm-starting from a state file
+      ! read in external state files and overwrites namelist state variables
+      if(namelist%warm_start_run .eq. 1) then
+        print*, 'RESTARTS NOT IMPLEMENTED YET -- CONTINUING WITH COLD START'
+        !call read_snow17_state(modelvar, namelist, parameters, runinfo)        ! SUBR. STILL NEEDS CHECKING in BMI version
+      endif
 #endif
       
     end associate ! terminate the associate block
@@ -88,9 +92,9 @@ contains
     model%runinfo%itime         = model%runinfo%itime + 1 ! increment the integer time by 1
     !model%runinfo%time_dbl     = dble(model%runinfo%time_dbl + model%runinfo%dt)        ! increment relative model run time in seconds by DT
     model%runinfo%curr_datetime = model%runinfo%curr_datetime + model%runinfo%dt     ! increment unix model run time in seconds by DT
-    call unix_to_datehr (runinfo%curr_datetime, runinfo%curr_datehr)       ! update datehr field as well
-    call unix_to_date_elem (runinfo%curr_datetime, runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, &
-                            runinfo%curr_hr, runinfo%curr_min, runinfo%curr_sec)
+    call unix_to_datehr (model%runinfo%curr_datetime, model%runinfo%curr_datehr)       ! update datehr field as well
+    call unix_to_date_elem (model%runinfo%curr_datetime, model%runinfo%curr_yr, model%runinfo%curr_mo, model%runinfo%curr_dy, &
+                            model%runinfo%curr_hr, model%runinfo%curr_min, model%runinfo%curr_sec)
     
   END SUBROUTINE advance_in_time
   
@@ -136,27 +140,29 @@ contains
         !  real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
           !SNOW17 CARRYOVER VARIABLES
   		!  cs, tprev)
-        call exsnow19(int(dt), int(dt/3600), runinfo%curr_dy, runinfo%curr_mo, runinfo%curr_yr, &
+        call exsnow19(int(runinfo%dt), int(runinfo%dt/3600), runinfo%curr_dy, runinfo%curr_mo, runinfo%curr_yr, &
     	  ! SNOW17 INPUT AND OUTPUT VARIABLES
   	      forcing%precip(nh), forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
     	  ! SNOW17 PARAMETERS
           !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
   	      parameters%latitude(nh), parameters%scf(nh), parameters%mfmax(nh), parameters%mfmin(nh), &
           parameters%uadj(nh), parameters%si(nh), parameters%nmf(nh), parameters%tipm(nh), parameters%mbase(nh), &
-          parameters%pxtemp(nh), parameters%plwhc(nh), parameters%daygm(nh), parameters%elev(nh), parameters%pa(nh), &
-          parameters%adc(nh), &
+          parameters%pxtemp(nh), parameters%plwhc(nh), parameters%daygm(nh), parameters%elev(nh), forcing%pa(nh), &
+          parameters%adc(nh,:), &
           ! SNOW17 CARRYOVER VARIABLES
-  		  modelvar%cs(nh), modelvar%tprev(nh) )             
+  		  modelvar%cs(nh,:), modelvar%tprev(nh) )             
 
         !---------------------------------------------------------------------
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
         !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
-        call write_output_vec(runinfo, parameters, forcing, modelvar)
+        call write_output_vec(namelist, runinfo, parameters, forcing, modelvar)
         
         ! === write out STATE FILES for snow17 if needed ===
         if(namelist%write_states > 0) then
-          call write_snow17_state(runinfo, namelist, modelvar)          ! SUBR. STILL NEEDS REFACTORING
+          print*, 'STATE WRITES NOT IMPLEMENTED YET -- CONTINUING WITH RUN'
+        
+          !call write_snow17_state(runinfo, namelist, modelvar)          ! SUBR. STILL NEEDS REFACTORING
         end if
 #endif
     
@@ -171,24 +177,26 @@ contains
   SUBROUTINE cleanup(model)
     implicit none
     type(snow17_type), intent(inout) :: model
+    
+    ! local variables
+    integer         :: nh
       
-      !---------------------------------------------------------------------
-      ! Compiler directive NGEN_OUTPUT_ACTIVE to be defined if 
-      ! Nextgen is writing model output (https://github.com/NOAA-OWP/ngen)
-      !---------------------------------------------------------------------
+    !---------------------------------------------------------------------
+    ! Compiler directive NGEN_OUTPUT_ACTIVE to be defined if 
+    ! Nextgen is writing model output (https://github.com/NOAA-OWP/ngen)
+    !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
-      !call finalize_output()      ! short enough that another sub not needed
+    !call finalize_output()      ! short enough that another sub not needed unless to print some end of run info
       
-      ! -- close all files
-      do nh=1, runinfo%n_hrus
-        close(runinfo%forcing_fileunits(nh)
-        close(runinfo%output_fileunits(nh) 
+    ! -- close all files
+      do nh=1, model%runinfo%n_hrus
+        close(model%runinfo%forcing_fileunits(nh))
+        close(model%runinfo%output_fileunits(nh))
       end do
-      close(runinfo%output_fileunits(nh+1)        
+      close(model%runinfo%output_fileunits(nh+1))        ! combined output file (basin avg)
 
-      ! -- print final stdout messages for user incl. location of output & period of run
-      print*, 'Done'
-      !TBA (see orig driver code)
+    ! -- print final stdout messages for user incl. location of output & period of run
+    print*, 'Done'
 #endif
   
   END SUBROUTINE cleanup

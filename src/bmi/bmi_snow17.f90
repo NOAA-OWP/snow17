@@ -8,7 +8,7 @@ module bmi_snow17_module
    use bmif_2_0
 #endif
 
-  use RunModule 
+  use runModule 
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
   implicit none
 
