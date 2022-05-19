@@ -11,7 +11,7 @@ module ioModule
 contains
 
 
-  subroutine read_snow17_params(this, param_file_name, runinfo)
+  subroutine read_snow17_parameters(this, param_file_name, runinfo)
     use runInfoType
     use dateTimeUtilsModule
     implicit none
@@ -153,7 +153,7 @@ contains
     end do
   
     return
-  end subroutine read_snow17_params
+  end subroutine read_snow17_parameters
 
 
 

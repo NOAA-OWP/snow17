@@ -33,15 +33,16 @@ type, public :: runinfo_type
 
   contains
 
-    procedure, public  :: Init
+    procedure, public  :: initInfo
 
 end type runinfo_type
 
 contains   
 
-  subroutine Init(this, namelist)
+  subroutine initInfo(this, namelist)
   
     use defNamelist
+    implicit none
 
     class(runinfo_type),intent(inout) :: this
     type(namelist_type),intent(in)    :: namelist
@@ -101,6 +102,6 @@ contains
     end do
     this%output_fileunits(nh)    = 500 + nh + 1   ! add one more unit for combined ouptuts
 
-  end subroutine Init
+  end subroutine initInfo
 
 end module runInfoType

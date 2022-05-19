@@ -22,13 +22,15 @@ module modelVarType
   
     contains
 
-      procedure, public  :: Init 
+      procedure, public  :: initModelVar
 
   end type modelvar_type
 
   contains   
 
-  subroutine Init(this, namelist)
+  subroutine initModelVar(this, namelist)
+  
+    implicit none
 
     ! define variables
     class(modelvar_type), intent(out) :: this
@@ -56,6 +58,6 @@ module modelVarType
     
     ! -- estimate derived variables (if any)
 
-  end subroutine Init
+  end subroutine initModelVar
 
 end module modelVarType

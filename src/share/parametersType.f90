@@ -23,20 +23,18 @@ type, public :: parameters_type
 
   contains
 
-    procedure, public  :: Init
+    procedure, public  :: initParams
 
 end type parameters_type
 
 contains
 
-  subroutine Init(this, namelist)
+  subroutine initParams(this, namelist)
   
     use defNamelist
 
     class(parameters_type), intent(inout)    :: this
     type(namelist_type), intent(in)          :: namelist
-    
-    associate(n_hrus   => namelist%n_hrus)
     
     ! allocate variables
     allocate(this%hru_id(n_hrus))
@@ -59,8 +57,6 @@ contains
     ! assign defaults (if any)
     this%total_area  = huge(1.0)
     
-    end associate
-
-  end subroutine Init
+  end subroutine initParams
 
 end module parametersType
