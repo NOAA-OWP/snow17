@@ -17,10 +17,10 @@ driver_dir = $(F_MASTER_DIR)/src/driver/
 snow19_dir = $(F_MASTER_DIR)/src/snow19/
 share_dir  = $(F_MASTER_DIR)/src/share/
 bmi_dir    = $(F_MASTER_DIR)/src/bmi/
-run_dir    = $(F_MASTER_DIR)/run/
+exe_dir    = $(F_MASTER_DIR)/bin/
 
 # Define the executable and path
-EXE = $(run_dir)/snow17.exe
+EXE = $(exe_dir)/snow17.exe
 
 # Define your Fortran compiler
 #FC  = pgf90
@@ -65,7 +65,6 @@ ifeq "$(FC)" "pgf90"
 endif
 
 
-
 #========================================================================
 # PART 3: Assemble all of the various subroutines
 
@@ -94,13 +93,11 @@ run_util = \
 	namelistModule.f90 \
         parametersType.f90 \
         forcingType.f90 \
-        \
         dateTimeUtilsModule.f90 \
         runInfoType.f90 \
         modelVarType.f90 \
         ioModule.f90 \
         runSnow17.f90 
-#        interfaces.f90 \
 
 model_run = $(patsubst %, $(share_dir)/%, $(run_util))
 
@@ -120,7 +117,7 @@ bmi      = $(snow17_bmi)
 
 
 #========================================================================
-# PART 4: Compile the puppy
+# PART 4: Compile it 
 
 all: model link clean 
 debug: model_debug link

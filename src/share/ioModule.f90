@@ -10,7 +10,6 @@ module ioModule
   
 contains
 
-
   subroutine read_snow17_parameters(this, param_file_name, runinfo)
     use runInfoType
     use dateTimeUtilsModule
@@ -142,15 +141,16 @@ contains
     if(n_params_read /= 26) then
       print *, 'Read ', n_params_read , ' SNOW17 params, but need 26.  Quitting.'; stop
     else
-      print *, 'Read all 26 SNOW17 params. Continuing...'
+      print *, 'Read all 26 params. Continuing...'
     end if
-    print*, '  -------------------'
     
     ! calculate derived parameters
     this%total_area = 0.0
     do nh=1, runinfo%n_hrus
       this%total_area = this%total_area + this%hru_area(nh)
     end do
+    
+    print*, 'Basin total area (sq km) is: ', this%total_area
   
     return
   end subroutine read_snow17_parameters
@@ -171,10 +171,11 @@ contains
     integer        :: nh     ! loop counter
     
     ! local variables
-    integer				:: yr, mnth, dy, hr, found_start, ios
+    integer				:: yr, mnth, dy, hr, found_start, ios, skipcount
     real			    :: pcp, tav
 
     ! --- code ------------------------------------------------------------------
+    print*, 'Initializing forcing files ...'
     found_start = 0
     do nh=1, runinfo%n_hrus
 
@@ -201,6 +202,7 @@ contains
       read(runinfo%forcing_fileunits(nh), *)
       
       ! advance to first record needed in simulation 
+      skipcount = 0
       do while(ios .ge. 0)
         ! forcing could have any format (not fixed width)
         read (UNIT=runinfo%forcing_fileunits(nh), FMT=*, IOSTAT=ierr) yr, mnth, dy, hr, pcp, tav
@@ -210,7 +212,9 @@ contains
           exit    ! break out of the loop
         end if
         
+        skipcount = skipcount + 1
       end do
+      print*, 'skipped ',skipcount,' records in forcing file ', nh
       
       ! backspace the file to the previous record
       backspace runinfo%forcing_fileunits(nh)
@@ -260,11 +264,14 @@ contains
     integer				                     :: nh, ierr=0
     integer				                     :: yr, mnth, dy, hr
     character(len=10)                        :: forcing_datehr
+    
+    !print*, "---"; print*, 'Current run datehr is ', runinfo%curr_datehr
   
+    ! loop over sub-areas and read their forcings
     do nh=1, runinfo%n_hrus
 
       ! read one record from already open files and check success
-      read (UNIT=runinfo%forcing_fileunits(nh), FMT=*, IOSTAT=ierr) yr, mnth, dy, hr, forcing%precip(nh), forcing%tair
+      read (UNIT=runinfo%forcing_fileunits(nh), FMT=*, IOSTAT=ierr) yr, mnth, dy, hr, forcing%precip(nh), forcing%tair(nh)
       if(ierr /= 0) then
         print*, 'ERROR:  failed to read forcing from file', trim(namelist%forcing_root) // trim(parameters%hru_id(nh))
         STOP
@@ -272,8 +279,10 @@ contains
 
       ! check forcing date against run date (in readable format)
       write(forcing_datehr ,'(I0.4,I0.2,I0.2,I0.2)') yr, mnth, dy, hr
+      !print*, 'Read forcing datehr ', forcing_datehr
+
       if(forcing_datehr /= runinfo%curr_datehr) then
-        print*, 'ERROR: forcing datehr',forcing_datehr, ' does not match curr_datehr of run', runinfo%curr_datehr
+        print*, 'ERROR: forcing datehr: ',forcing_datehr, ' does not match curr_datehr of run :', runinfo%curr_datehr
         STOP
       end if 
 
@@ -459,11 +468,12 @@ contains
 
   ! === write output for one timestep ===
   ! assumes that files have been opened and header already written
-  SUBROUTINE write_output_vec(namelist, runinfo, parameters, forcing, modelvar)
+  SUBROUTINE write_output_vec(namelist, runinfo, parameters, forcing, modelvar, n_curr_hru)
     implicit none
     type (namelist_type),    intent(in)     :: namelist
     type (runinfo_type),     intent(in)     :: runinfo
     type (parameters_type),  intent(in)     :: parameters
+    integer, intent(in)                     :: n_curr_hru   ! number of the current hru being simulated
     
     ! forcing & modelvar are because the combined variables get updated here
     type (forcing_type),     intent(inout)  :: forcing
@@ -480,40 +490,38 @@ contains
     32 FORMAT(I4.4, 3(1x,I2.2), 7(F10.3))
 
     ! if user setting is to write out information for each snowband, open the individual files
-    if (namelist%output_hrus == 1) then
-      do nh=1, runinfo%n_hrus
-    
-        write(runinfo%output_fileunits(nh+1), 32) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
-              forcing%tair(nh), forcing%precip(nh), forcing%precip(nh)*parameters%scf(nh), &
-              modelvar%sneqv(nh)*1000., modelvar%snowh(nh), modelvar%snow(nh), modelvar%raim(nh)
-      end do
+    if (namelist%output_hrus == 1 .and. runinfo%n_hrus > 1) then
+      write(runinfo%output_fileunits(n_curr_hru+1), 32) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
+            forcing%tair(n_curr_hru), forcing%precip(n_curr_hru), forcing%precip(n_curr_hru)*parameters%scf(n_curr_hru), &
+            modelvar%sneqv(n_curr_hru)*1000., modelvar%snowh(n_curr_hru), modelvar%snow(n_curr_hru), modelvar%raim(n_curr_hru)
     end if  ! IF case for writing HRU-specific output to file (not including states)
 
-    ! ==== sum across snowbands with weighting for snowband area ====
-    do nh=1, runinfo%n_hrus
-      forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
-      forcing%precip_comb      = forcing%precip_comb + forcing%precip(nh) * parameters%hru_area(nh)
-      forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip(nh) * parameters%hru_area(nh) * parameters%scf(nh)
-      modelvar%sneqv_comb      = modelvar%sneqv_comb + modelvar%sneqv(nh) * parameters%hru_area(nh) 
-      modelvar%snowh_comb      = modelvar%snowh_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
-      modelvar%snow_comb       = modelvar%snow_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
-      modelvar%raim_comb       = modelvar%raim_comb + modelvar%raim(nh) * parameters%hru_area(nh)
-    end do
+    ! ==== if all snowbands have been run, sum across snowbands with weighting for snowband area ====
+    if (n_curr_hru .eq. runinfo%n_hrus) then 
+      do nh=1, runinfo%n_hrus
+        forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
+        forcing%precip_comb      = forcing%precip_comb + forcing%precip(nh) * parameters%hru_area(nh)
+        forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip(nh) * parameters%hru_area(nh) * parameters%scf(nh)
+        modelvar%sneqv_comb      = modelvar%sneqv_comb + modelvar%sneqv(nh) * parameters%hru_area(nh) 
+        modelvar%snowh_comb      = modelvar%snowh_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
+        modelvar%snow_comb       = modelvar%snow_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
+        modelvar%raim_comb       = modelvar%raim_comb + modelvar%raim(nh) * parameters%hru_area(nh)
+      end do
 
-    ! take average of weighted sum of HRU areas
-    forcing%tair_comb        = forcing%tair_comb / parameters%total_area
-    forcing%precip_comb      = forcing%precip_comb / parameters%total_area
-    forcing%precip_scf_comb  = forcing%precip_scf_comb / parameters%total_area
-    modelvar%sneqv_comb      = modelvar%sneqv_comb / parameters%total_area
-    modelvar%snowh_comb      = modelvar%snowh_comb / parameters%total_area
-    modelvar%snow_comb       = modelvar%snow_comb / parameters%total_area
-    modelvar%raim_comb       = modelvar%raim_comb / parameters%total_area
+      ! take average of weighted sum of HRU areas
+      forcing%tair_comb        = forcing%tair_comb / parameters%total_area
+      forcing%precip_comb      = forcing%precip_comb / parameters%total_area
+      forcing%precip_scf_comb  = forcing%precip_scf_comb / parameters%total_area
+      modelvar%sneqv_comb      = modelvar%sneqv_comb / parameters%total_area
+      modelvar%snowh_comb      = modelvar%snowh_comb / parameters%total_area
+      modelvar%snow_comb       = modelvar%snow_comb / parameters%total_area
+      modelvar%raim_comb       = modelvar%raim_comb / parameters%total_area
 
-    ! -- write out combined file that is similar to each area file, but add flow variable in CFS units
-
-    write(runinfo%output_fileunits(1), 32) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
-          forcing%tair_comb, forcing%precip_comb, forcing%precip_scf_comb, &
-          modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%snow_comb, modelvar%raim_comb
+      ! -- write out combined file that is similar to each area file, but add flow variable in CFS units
+      write(runinfo%output_fileunits(1), 32) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
+            forcing%tair_comb, forcing%precip_comb, forcing%precip_scf_comb, &
+            modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%snow_comb, modelvar%raim_comb
+    endif 
 
     return
   END SUBROUTINE write_output_vec

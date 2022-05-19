@@ -46,6 +46,9 @@ contains
       !call parameters%Init(namelist)     ! read and/or initialize parameters
       call parameters%initParams(namelist)     ! read and/or initialize parameters
       
+      print*, 'number of hrus is: ', runinfo%n_hrus
+     
+      
       ! read parameters from input file
       call read_snow17_parameters(parameters, namelist%snow17_param_file, runinfo)
         
@@ -85,6 +88,8 @@ contains
 
   SUBROUTINE advance_in_time(model)
     type (snow17_type), intent (inout) :: model
+    
+    !print*, 'current time: ', model%runinfo%curr_datehr
 
     ! -- run snow17 for one time step
     call solve_snow17(model)
@@ -157,7 +162,7 @@ contains
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
         !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
-        call write_output_vec(namelist, runinfo, parameters, forcing, modelvar)
+        call write_output_vec(namelist, runinfo, parameters, forcing, modelvar, nh)
         
         ! === write out STATE FILES for snow17 if needed ===
         if(namelist%write_states > 0) then
