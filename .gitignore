@@ -94,6 +94,7 @@ coverage.xml
 
 # Working directories
 alt_prev/
+not_used/
 
 # Temporary Development Files 
 LASTNEXT
@@ -107,3 +108,7 @@ NOTES*
 
 # unzipped test case
 ./test_cases/ex1/
+
+
+# local Makefile versions
+*.local

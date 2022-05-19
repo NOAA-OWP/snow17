@@ -59,30 +59,24 @@ contains
     this%dt           = namelist%model_timestep         ! in seconds
     this%start_datehr = namelist%start_datehr
     this%end_datehr   = namelist%end_datehr
+    this%n_hrus       = namelist%n_hrus
     
     ! calculated / derived variables
-    !this%start_year   = this%start_datehr(1:4)
-    !this%start_month  = this%start_datehr(5:6)
-    !this%start_day    = this%start_datehr(7:8)
-    !this%start_hour   = this%start_datehr(9:10)
-    write(this%start_year, '(I4)') this%start_datehr(1:4)
-    write(this%start_month, '(I4)') this%start_datehr(5:6)
-    write(this%start_day, '(I4)') this%start_datehr(7:8)
-    write(this%start_hour, '(I4)') this%start_datehr(9:10)
-    !this%end_year     = this%end_datehr(1:4)
-    !this%end_month    = this%end_datehr(5:6)
-    !this%end_day      = this%end_datehr(7:8)
-    !this%curr_datehr  = this%start_datehr    
-    write(this%end_year, '(I4)') this%end_datehr(1:4)
-    write(this%end_month, '(I4)') this%end_datehr(5:6)
-    write(this%end_day, '(I4)') this%end_datehr(7:8)
-    write(this%end_hour, '(I4)') this%end_datehr(9:10)
+    read(this%start_datehr(1:4), '(I4)') this%start_year   ! converting char dates to int date elements
+    read(this%start_datehr(5:6), '(I4)') this%start_month
+    read(this%start_datehr(7:8), '(I4)') this%start_day
+    read(this%start_datehr(9:10), '(I4)') this%start_hour
+    read(this%end_datehr(1:4), '(I4)') this%end_year
+    read(this%end_datehr(5:6), '(I4)') this%end_month
+    read(this%end_datehr(7:8), '(I4)') this%end_day
+    read(this%end_datehr(9:10), '(I4)') this%end_hour
     this%curr_yr      = this%start_year
     this%curr_mo      = this%start_month
     this%curr_dy      = this%start_day
     this%curr_hr      = this%start_hour
     this%curr_min     = 0
     this%curr_sec     = 0
+    this%curr_datehr  = this%start_datehr    ! default setting needed to advance the forcings to the start date
     
     ! unix times
     this%start_datetime = date_to_unix(namelist%start_datehr)  ! returns seconds-since-1970-01-01 00
@@ -91,8 +85,8 @@ contains
     this%ntime          = int( (this%start_datetime - this%end_datetime)/this%dt )
 
     ! other default assignments
-    this%itime          = 1           ! initialize the time loop counter at 1
-    this%time_dbl       = 0.d0        ! start model run at t = 0.0  
+    this%itime          = 1                    ! initialize the time loop counter at 1
+    this%time_dbl       = 0.d0                 ! start model run at t = 0.0  
     
     ! assign input forcing and output fileunit numbers
     do nh=1,n_hrus
