@@ -910,7 +910,7 @@ contains
  
     u_day = julian_date (1, 1, 1970)
     i_day = int (uxtime/86400)
-    if (i_day < 0) then
+    if (i_day < 0 .or. uxtime < 0) then
       i_day = i_day - 1
     end if
     i_day = i_day + 1
@@ -938,11 +938,12 @@ contains
     integer :: sec, min, hour, day, month, year, u_day, i_day
  
     u_day = julian_date (1, 1, 1970)
-    i_day = int (uxtime/86400)
-    if (i_day < 0) then
+    i_day = int (uxtime/86400) 
+
+    if (i_day < 0 .or. uxtime < 0) then
       i_day = i_day - 1
     end if
-    i_day = i_day + 1
+    i_day = i_day + 1    ! correct for int() trucation to floor
  
     call calendar_date (u_day+i_day, day, month, year)
 

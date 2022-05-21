@@ -9,8 +9,8 @@ module modelVarType
 
     ! main model states and flux variable
     real, dimension(:), allocatable    :: sneqv  ! snow water equivalent (unit)
-    real, dimension(:), allocatable    :: snow   ! check this
     real, dimension(:), allocatable    :: snowh  ! snow height
+    real, dimension(:), allocatable    :: snow   ! snow (?) -- seems same as snowh but used in snow19()
     real, dimension(:), allocatable    :: raim   ! rain and melt output
   
     ! other states and carryover variables
@@ -18,7 +18,7 @@ module modelVarType
     real, dimension(:,:), allocatable  :: cs     ! 19-element vector per HRU used in snow19: (n_hrus, 19)
   
     ! areally-averaged variables for output 
-    real                               :: sneqv_comb, snowh_comb, snow_comb, raim_comb
+    real                               :: sneqv_comb, snowh_comb, raim_comb
   
     contains
 
@@ -48,10 +48,9 @@ module modelVarType
     this%raim(:)       = 0.0
     this%sneqv(:)      = 0.0 
     this%snowh(:)      = 0.0 
-    this%snow(:)       = 0.0
+    this%snow(:)       = 0.0 
     this%sneqv_comb    = 0.0
     this%snowh_comb    = 0.0
-    this%snow_comb     = 0.0
     this%raim_comb     = 0.0 
     this%tprev(:)      = 0.0      ! prev. temp is needed
     this%cs(:,:)       = 0.0      ! prev. temp is needed

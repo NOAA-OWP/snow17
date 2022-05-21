@@ -158,7 +158,6 @@ contains
     output_items(1) = 'precip_scf'   ! precip after scf scaling (mm)
     output_items(2) = 'sneqv'        ! snow water equivalent (mm)
     output_items(3) = 'snowh'        ! snow height (mm)
-    output_items(4) = 'snow'         ! snow mystery variable (mm)
     output_items(5) = 'raim'         ! rain plus snowmelt (mm/s)
 
     names => output_items
@@ -206,7 +205,7 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    !time = dble(this%model%runinfo%ntime * this%model%runinfo%dt)  ! time relative to start time (s)
+    !time = dble(this%model%runinfo%ntimes * this%model%runinfo%dt)  ! time relative to start time (s)
     time = dble(this%model%runinfo%end_datetime)                    ! using unix time (s)
     
     bmi_status = BMI_SUCCESS
@@ -296,7 +295,7 @@ contains
 
     select case(name)
     case('tair', 'precip', &     ! input vars
-         'precip_scf', 'sneqv', 'snowh', 'snow', 'raim')        ! output vars
+         'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
        grid = 0
        bmi_status = BMI_SUCCESS
     case default
@@ -567,7 +566,7 @@ contains
 
     select case(name)
     case('tair', 'precip', &     ! input vars
-         'precip_scf', 'sneqv', 'snowh', 'snow', 'raim')        ! output vars
+         'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
        type = "real"
        bmi_status = BMI_SUCCESS
     case default
@@ -597,9 +596,6 @@ contains
        units = "mm"
        bmi_status = BMI_SUCCESS
     case("snowh")
-       units = "mm"
-       bmi_status = BMI_SUCCESS
-    case("snow")
        units = "mm"
        bmi_status = BMI_SUCCESS
     case("raim")
@@ -633,9 +629,6 @@ contains
        bmi_status = BMI_SUCCESS
     case("snowh")
        size = sizeof(this%model%modelvar%snowh_comb)     ! 'sizeof' in gcc & ifort
-       bmi_status = BMI_SUCCESS
-    case("snow")
-       size = sizeof(this%model%modelvar%snow_comb)     ! 'sizeof' in gcc & ifort
        bmi_status = BMI_SUCCESS
     case("raim")
        size = sizeof(this%model%modelvar%raim_comb)      ! 'sizeof' in gcc & ifort
@@ -721,9 +714,6 @@ contains
        bmi_status = BMI_SUCCESS
     case("snowh")
        dest = sizeof(this%model%modelvar%snowh_comb)     ! 'sizeof' in gcc & ifort
-       bmi_status = BMI_SUCCESS
-    case("snow")
-       dest = sizeof(this%model%modelvar%snow_comb)     ! 'sizeof' in gcc & ifort
        bmi_status = BMI_SUCCESS
     case("raim")
        dest = sizeof(this%model%modelvar%raim_comb)      ! 'sizeof' in gcc & ifort
@@ -911,9 +901,6 @@ contains
        bmi_status = BMI_SUCCESS
     case("snowh")
        this%model%modelvar%snowh_comb = src(1)
-       bmi_status = BMI_SUCCESS
-    case("snow")
-       this%model%modelvar%snow_comb = src(1)
        bmi_status = BMI_SUCCESS
     case("raim")
        this%model%modelvar%raim_comb = src(1)
