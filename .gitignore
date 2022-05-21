@@ -102,12 +102,14 @@ NOTES*
 *.tmp
 *.lnk
 *.not_used
+*.dev
 
 # python notebook files
 *.ipynb*
 
 # unzipped test case
 ./test_cases/ex1/
+test_cases/ex1/
 
 
 # local Makefile versions
