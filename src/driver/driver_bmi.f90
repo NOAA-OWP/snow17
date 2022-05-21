@@ -42,7 +42,7 @@ program multi_driver
   !  Initialize
   !  Call the initialize_from_file() subroutine in src/RunSnow17.f90
   !---------------------------------------------------------------------
-  print*, "Initializing..."
+  print*, "Initializing run ..."
   call get_command_argument(1, namelist_file, status=status)
   !if( .not. ( present(namelist_file) ) ) then
   if( status /= 0 ) then
@@ -67,7 +67,6 @@ program multi_driver
   print*,'----'
   
   ! loop through while current time <= end time (
-  print*, "Running..."
   do while (current_time .le. end_time)
     !print*, 'Current time:', current_time
     status = m%update()                       ! run the model one time step

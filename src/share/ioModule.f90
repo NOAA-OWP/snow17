@@ -140,8 +140,6 @@ contains
     ! quick check on completeness
     if(n_params_read /= 26) then
       print *, 'Read ', n_params_read , ' SNOW17 params, but need 26.  Quitting.'; stop
-    else
-      print *, 'Read all 26 params. Continuing...'
     end if
     
     ! calculate derived parameters
@@ -150,15 +148,11 @@ contains
       this%total_area = this%total_area + this%hru_area(nh)
     end do
     
-    print*, 'Basin total area (sq km) is: ', this%total_area
-  
     return
   end subroutine read_snow17_parameters
 
-
-
   ! ==== Open forcings files and read to start of first record
-  SUBROUTINE open_and_init_forcing_files(namelist, runinfo, parameters)
+  SUBROUTINE init_forcing_files(namelist, runinfo, parameters)
     implicit none
     type (namelist_type),    intent(in)   :: namelist
     type (runinfo_type),     intent(in)   :: runinfo
@@ -175,7 +169,7 @@ contains
     real			    :: pcp, tav
 
     ! --- code ------------------------------------------------------------------
-    print*, 'Initializing forcing files ...'
+    print*, 'Initializing forcing files'
     found_start = 0
     do nh=1, runinfo%n_hrus
 
@@ -214,20 +208,22 @@ contains
         
         skipcount = skipcount + 1
       end do
-      print*, 'skipped ',skipcount,' records in forcing file ', nh
+      
+      if(nh .eq. 1) then
+        print*, ' -- skipped ', skipcount ,' initial records in forcing files'
+      endif 
       
       ! backspace the file to the previous record
       backspace runinfo%forcing_fileunits(nh)
 
     end do  ! end loop over snow bands
     
-    ! error out if start of all forcings files not found
+    ! error out if start of any forcing file is not found
     if (found_start /= runinfo%n_hrus) then
-      print*, 'ERROR: found the starting date in only', found_start, ' out of', runinfo%n_hrus, ' forcing files.  Quitting.'
-      stop
+      print*, 'ERROR: found the starting date in only', found_start, ' out of', runinfo%n_hrus, ' forcing files.  Quitting.'; stop
     endif
 
-  END SUBROUTINE open_and_init_forcing_files
+  END SUBROUTINE init_forcing_files
   
   ! subroutine used in read_areal_forcing_vec() to add pressure to forcing data structure
   subroutine sfc_pressure(elevation, sfc_pres)
@@ -249,7 +245,7 @@ contains
 
   ! ==== read multiple snowband forcings one timestep at a time
   !      assumes files are already opened and advanced to timestep of interest
-  subroutine read_areal_forcing_vec(namelist, parameters, runinfo, forcing)
+  subroutine read_areal_forcing(namelist, parameters, runinfo, forcing)
     !use nrtype
     use namelistModule 
     implicit none
@@ -298,10 +294,10 @@ contains
     end do  ! end loop across snowbands (hrus)
     
     return
-  END subroutine read_areal_forcing_vec  
+  END subroutine read_areal_forcing  
 
   ! ==== Open output files and write header
-  SUBROUTINE open_and_init_output_files(namelist, runinfo, parameters)
+  SUBROUTINE init_output_files(namelist, runinfo, parameters)
     implicit none
     type (namelist_type),    intent(in)   :: namelist
     type (runinfo_type),     intent(in)   :: runinfo
@@ -315,27 +311,23 @@ contains
 
     ! --- code ------------------------------------------------------------------
 
-    ! open the main basin-average output file and write header
+    print*, 'Initializing output files'
 
-    ! make filename to read
-    filename = trim(namelist%output_root) // trim(namelist%main_id)	
-        
-    ! Open the output file
+    ! Open the main basin-average output file and write header
+    filename = trim(namelist%output_root) // trim(namelist%main_id)	// '.txt'
     open(runinfo%output_fileunits(1), file = trim(filename), form = 'formatted', action = 'write', status='replace', iostat = ierr)
     if (ierr /= 0) then
       write(*,'("Problem opening file ''", A, "''")') trim(filename)
       stop ":  ERROR EXIT"
     endif
-      
-    ! Write 1-line header
-    write(runinfo%output_fileunits(1),'(A)') 'year mo dy hr tair precip precip*scf sneqv snowh snow raim '
+    write(runinfo%output_fileunits(1),'(A)') 'year mo dy hr tair precip precip*scf sneqv snowh raim '   ! header
 
     ! if user setting is to write out information for each snowband, open the individual files
     if (namelist%output_hrus == 1) then
       do nh=1, runinfo%n_hrus
 
         ! make filename to read
-        filename = trim(namelist%output_root) // trim(parameters%hru_id(nh))	
+        filename = trim(namelist%output_root) // trim(parameters%hru_id(nh)) // '.txt'	
 
         ! Open the output files
         open(runinfo%output_fileunits(nh+1), file = trim(filename), form = 'formatted', action = 'write', status='replace', iostat = ierr)
@@ -345,130 +337,156 @@ contains
         endif
       
         ! Write 1-line header
-        write(runinfo%output_fileunits(nh+1),'(A)') 'year mo dy hr tair precip precip*scf sneqv snowh snow raim '
+        write(runinfo%output_fileunits(nh+1),'(A)') 'year mo dy hr tair precip precip*scf sneqv snowh raim '
         
       end do  ! end loop over sub-units
       
     end if   
     
-  END SUBROUTINE  open_and_init_output_files
+  END SUBROUTINE init_output_files
   
+  ! ==== Open new state (restart) files and write header
+  SUBROUTINE init_new_state_files(namelist, runinfo, parameters)
+    implicit none
+    type (namelist_type),    intent(in)   :: namelist
+    type (runinfo_type),     intent(in)   :: runinfo
+    type (parameters_type),  intent(in)   :: parameters
+    
+    ! local variables
+    character*256  :: filename
+    logical        :: lexist ! logical for whether the file specified by filename exists
+    integer        :: ierr   ! error code returned by open(iostat = ierr)
+    integer        :: nh     ! loop counter
+
+    ! --- code ------------------------------------------------------------------
+    
+    print*, 'Initializing new restart files'
+
+    ! if user setting is to write out state files, open one for each snowband and write header row
+    if (namelist%write_states == 1) then
+
+      do nh=1, runinfo%n_hrus
+
+        ! make filename  
+        filename = trim(namelist%snow_state_out_root) // trim(parameters%hru_id(nh)) // '.txt'	
+
+        ! Open the output files
+        open(runinfo%state_fileunits(nh), file = trim(filename), form = 'formatted', action = 'write', status='replace', iostat = ierr)
+        if (ierr /= 0) then
+          write(*,'("Problem opening file ''", A, "''")') trim(filename)
+          stop ":  ERROR EXIT"
+        endif
+      
+        ! Write 1-line header
+        write(runinfo%state_fileunits(nh),'(A)') &
+         'datehr tprev cs1 cs2 cs3 cs4 cs5 cs6 cs7 cs8cs9 cs10 cs11 cs12 cs13 cs14 cs15 cs16 cs17 cs18 cs19'
+  
+      end do  ! end loop over sub-units
+    end if   
+    
+  END SUBROUTINE init_new_state_files
+  
+  ! === write state information for one timestep ===
+  subroutine write_snow17_statefile(runinfo, namelist, modelvar, n_curr_hru)
+    implicit none   
+    type (namelist_type),    intent(in)     :: namelist
+    type (runinfo_type),     intent(in)     :: runinfo
+    type (modelvar_type),    intent(in)     :: modelvar
+    integer, intent(in)                     :: n_curr_hru
+    
+    ! local variables
+    integer        :: ierr   ! error code returned by open(iostat = ierr)
+ 
+    ! write fixed-width format line of state file for current timesstep and sub-unit
+    41 FORMAT(I0.4, 3(I0.2), 20(F20.12))    ! use maximum precision (for double)
+    write(runinfo%state_fileunits(n_curr_hru), 41, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
+          modelvar%tprev(n_curr_hru), modelvar%cs(n_curr_hru,:)
+    if(ierr /= 0) then
+      print*, 'ERROR writing state file information for sub-unit ', n_curr_hru; stop
+    endif
+    
+    return
+  end subroutine write_snow17_statefile
   
 
-  ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !   NEEDS UPDATING
-  subroutine read_snow17_state(modelvar, namelist, parameters, runinfo)
+  ! === read state information for one timestep before start of run ===
+  subroutine read_snow17_statefiles (modelvar, namelist, parameters, runinfo) 
     !use nrtype
     !use def_namelists, only: snow_state_in_root
     implicit none
   
     ! input variables
-    class(parameters_type), intent(in)        :: parameters
-    class(namelist_type), intent(in)          :: namelist
-    class(runinfo_type), intent(in)           :: runinfo
+    type (parameters_type), intent(in)        :: parameters
+    type (namelist_type), intent(in)          :: namelist
+    type (runinfo_type), intent(in)           :: runinfo
   
     ! [in]/output variables  (Note:  types before were real(sp)
-    class(modelvar_type), intent(inout)       :: modelvar
+    type (modelvar_type), intent(inout)       :: modelvar
    
     ! local variables
     integer               :: hru
-    integer	              :: ios=0
-    character(len=480)    :: state_infile
-    character(len=10)     :: tmp_state_datehr_str
-    !character(len=10)	  :: state_date_str       ! AWW string to match date in input states
-    integer               :: state_year, state_month, state_day, state_hr, state_min, state_sec 
+    integer	              :: ios = 0
+    character(len=480)    :: state_filename
+    character(len=10)     :: statefile_datehr
+    character(len=10)	  :: state_datehr         ! string to match date in input states
     real                  :: prev_datetime        ! for reading state file
-    character(len=10)     :: state_datehr_str     ! string to match date in input states (YYYYMMDDHH)
+    integer               :: states_found         ! counter to match hrus
     
-    ! starting statefiles match format of statefile outputs (date then vars)
-    !   state read routines look for state from one day before the start date of run
-    !call day_before_date(namelist%start_year,namelist%start_month,namelist%start_day,state_year,state_month,state_day)
-    prev_datetime = runinfo%curr_datetime - runinfo%dt       ! decrement unix model run time in seconds by DT
-    call unix_to_datehr (dble(prev_datetime), state_datehr_str)       ! update datehr field as well  -- MAYBE NOT NEEDED
-    call unix_to_date_elem (dble(prev_datetime), state_year, state_month, state_day, state_hr, state_min, state_sec)
-     
-    ! create string that will be matched in state file
-    write(state_datehr_str,'(I0.4,I0.2,I0.2,I0.2)') state_year, state_month, state_day, state_hr
+    ! ---- code -----
+    print*, 'Reading restart files'
     
-    !!!! NOTE:  next part needs updating for new run loop structure (ie statefile restarts NOT YET IMPLEMENTED
+    ! starting statefiles match format of statefile outputs (date then variables)
+    !   statefile read looks for matching date timestep before run start because states are written at end of timestep
+    prev_datetime = (runinfo%start_datetime - runinfo%dt)         ! decrement unix model run time in seconds by DT
+    call unix_to_datehr (dble(prev_datetime), state_datehr)    ! create statefile datestring to match
+    print*, ' -- state datehr: ', state_datehr
     
     ! loop over hrus and read and store initial state values
+    states_found = 0          ! set counter
     do hru=1, runinfo%n_hrus
-      print*, 'Reading initial model states for area', hru, 'out of', namelist%n_hrus, 'for watershed ', namelist%main_id
   
       ! make state filename
-      state_infile = trim(namelist%snow_state_in_root) // trim(parameters%hru_id(hru))
-      open(unit=95,FILE=trim(state_infile),FORM='formatted',status='old')
-      print*, 'Reading snow state file: ', trim(state_infile)
+      state_filename = trim(namelist%snow_state_in_root) // trim(parameters%hru_id(hru)) // '.txt'
+      open(unit=95,FILE=trim(state_filename), FORM='formatted', status='old')
+      !print*, ' -- reading snow state file: ', trim(state_filename)
   
       ! format for input is an unknown number of rows with 20 data columns (1 tprev, 19 for cs)
-      !   the first column is the datestring
-      do while(ios .ge. 0)
+      !   the first column is the datestring; neg ios means end of file; pos means something wrong
+
+      ! skip header row
+      read(95, *, IOSTAT=ios)
+      
+      ! read each row and check to see if the date matches the initial state date
+      do while(ios .eq. 0)
   
-        ! read each row and check to see if the date matches the initial state date
-        read(95,*,IOSTAT=ios) tmp_state_datehr_str, modelvar%tprev(:), modelvar%cs(hru,:)
+        read(95, *, IOSTAT=ios) statefile_datehr, modelvar%tprev(hru), modelvar%cs(hru,:)
   
-        ! checks either for real date or special word identifying the state to use
+        ! checks either for real date or special keyword identifying the state to use
         !   this functionality facilitates ESP forecast initialization
-        if(tmp_state_datehr_str==state_datehr_str .or. tmp_state_datehr_str=='FcstDate') then
-          print *, '  -- found initial snow state on ', state_datehr_str
+        if(statefile_datehr==state_datehr .or. statefile_datehr=='FcstDate') then
+          states_found = states_found + 1
           close(unit=95)
-          return
+          exit               ! break out of reading loop if state found
         end if
         
-      end do  ! end loop through state file
-      close(unit=95)
-  
-      ! if you reach here without returning, quit -- the initial state date was not found
-      print*, 'ERROR:  snow init state not found in snow initial state file.  Looking for: ', state_datehr_str
-      print*, '  -- last state read was: ', tmp_state_datehr_str
-      print*, 'Stopping.  Check inputs!'
-      stop
-      
+      end do  ! end loop to read state file for one hru        
     end do   ! end loop over one or more hrus (eg, snowbands)
-  
-  end subroutine read_snow17_state
-  
-  ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !   NEEDS UPDATING !!
-  subroutine write_snow17_state(year, month, day, hour, cs, tprev, sim_length, curr_hru_id)
-    use nrtype
-    use defNamelist, only: snow_state_out_root
-    implicit none
-  
-    !input variables
-    character(len = 20), intent(in) 	    :: curr_hru_id  ! HRU extension for state fname
-    integer(I4B),dimension(:),intent(in)	:: year
-    integer(I4B),dimension(:),intent(in)	:: month
-    integer(I4B),dimension(:),intent(in)	:: day
-    integer(I4B),dimension(:),intent(in)	:: hour
-    real(sp),dimension(:,:),intent(in)	    :: cs	         ! carry over array
-    real(sp),dimension(:),intent(in)	    :: tprev         ! carry over variable
-    integer(I4B),intent(in)                 :: sim_length    ! length of simulation
-  
-    !local variables
-    integer(I4B)	:: i
-    character(len = 480) :: state_outfile
-  
-    ! make state input filename
-    state_outfile = trim(snow_state_out_root) // trim(curr_hru_id)
-  
-    open(unit=95,FILE=trim(state_outfile),FORM='formatted',status='replace')
-    print*, 'Writing snow state file: ', trim(state_outfile)
-  
-    41 FORMAT(I0.4, 3(I0.2), 20(F20.12))  ! big enough to separate fields
-    do i = 1,sim_length
-      ! print*, 'tprev = ',tprev(i)  AWW debugging
-  
-      write(95,41) year(i),month(i),day(i),hour(i),tprev(i), cs(:,i)
-    enddo
-  
-    close(unit=95)
-  
+    
+    ! check to make sure enough states on correct dates were found
+    if (states_found /= runinfo%n_hrus) then 
+      print*, 'ERROR:  matching state not found in snow17 restart file.  Looking for state date: ', state_datehr
+      print*, '  -- last state read was on: ', statefile_datehr
+      print*, 'Stopping.  Check inputs!'; stop
+    endif
+    
     return
-  end subroutine write_snow17_state
+  
+  end subroutine read_snow17_statefiles
+  
 
   ! === write output for one timestep ===
   ! assumes that files have been opened and header already written
-  SUBROUTINE write_output_vec(namelist, runinfo, parameters, forcing, modelvar, n_curr_hru)
+  SUBROUTINE write_snow17_output(namelist, runinfo, parameters, forcing, modelvar, n_curr_hru)
     implicit none
     type (namelist_type),    intent(in)     :: namelist
     type (runinfo_type),     intent(in)     :: runinfo
@@ -480,20 +498,22 @@ contains
     type (modelvar_type),    intent(inout)  :: modelvar
     
     ! local variables
-    character*256  :: filename
     integer        :: ierr   ! error code returned by open(iostat = ierr)
     integer        :: nh     ! loop counter
   
     ! ==== WRITE output for current area simulation ====
     ! Note:  write order should match header written by open_and_init_output_files()
     
-    32 FORMAT(I4.4, 3(1x,I2.2), 7(F10.3))
+    32 FORMAT(I4.4, 3(1x,I2.2), 6(F10.3))
 
     ! if user setting is to write out information for each snowband, open the individual files
     if (namelist%output_hrus == 1 .and. runinfo%n_hrus > 1) then
-      write(runinfo%output_fileunits(n_curr_hru+1), 32) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
+      write(runinfo%output_fileunits(n_curr_hru+1), 32, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
             forcing%tair(n_curr_hru), forcing%precip(n_curr_hru), forcing%precip(n_curr_hru)*parameters%scf(n_curr_hru), &
-            modelvar%sneqv(n_curr_hru)*1000., modelvar%snowh(n_curr_hru), modelvar%snow(n_curr_hru), modelvar%raim(n_curr_hru)
+            modelvar%sneqv(n_curr_hru)*1000., modelvar%snowh(n_curr_hru), modelvar%raim(n_curr_hru)
+      if(ierr /= 0) then
+        print*, 'ERROR writing output information for basin average'; stop
+      endif            
     end if  ! IF case for writing HRU-specific output to file (not including states)
 
     ! ==== if all snowbands have been run, sum across snowbands with weighting for snowband area ====
@@ -504,7 +524,6 @@ contains
         forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip(nh) * parameters%hru_area(nh) * parameters%scf(nh)
         modelvar%sneqv_comb      = modelvar%sneqv_comb + modelvar%sneqv(nh) * parameters%hru_area(nh) 
         modelvar%snowh_comb      = modelvar%snowh_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
-        modelvar%snow_comb       = modelvar%snow_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
         modelvar%raim_comb       = modelvar%raim_comb + modelvar%raim(nh) * parameters%hru_area(nh)
       end do
 
@@ -514,37 +533,19 @@ contains
       forcing%precip_scf_comb  = forcing%precip_scf_comb / parameters%total_area
       modelvar%sneqv_comb      = modelvar%sneqv_comb / parameters%total_area
       modelvar%snowh_comb      = modelvar%snowh_comb / parameters%total_area
-      modelvar%snow_comb       = modelvar%snow_comb / parameters%total_area
       modelvar%raim_comb       = modelvar%raim_comb / parameters%total_area
 
       ! -- write out combined file that is similar to each area file, but add flow variable in CFS units
-      write(runinfo%output_fileunits(1), 32) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
+      write(runinfo%output_fileunits(1), 32, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
             forcing%tair_comb, forcing%precip_comb, forcing%precip_scf_comb, &
-            modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%snow_comb, modelvar%raim_comb
+            modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%raim_comb
+      if(ierr /= 0) then
+        print*, 'ERROR writing output information for sub-unit ', n_curr_hru; stop
+      endif
     endif 
 
     return
-  END SUBROUTINE write_output_vec
-
-  ! === miscellaneous ===
-
-  character(len=256) function upcase(h) result(return_string)
-    implicit none
-    character(len=*), intent(in) :: h
-    integer :: i
-    
-    return_string = ""
-
-    do i = 1, len_trim(h)
-       if ((ichar(h(i:i)).ge.96) .and. (ichar(h(i:i)).le.123)) then
-          return_string(i:i) = char(ichar(h(i:i))-32)
-       else
-          return_string(i:i) = h(i:i)
-       endif
-    enddo
-
-  end function upcase
-
+  END SUBROUTINE write_snow17_output
 
   
 end module ioModule

@@ -21,7 +21,7 @@ type, public :: runinfo_type
   double precision                    :: time_dbl          ! current time of model run in seconds from beginning
   double precision                    :: dt                ! run timestep (s)
   integer                             :: itime             ! current integer time step of model run
-  integer                             :: ntime             ! total number of integer time steps in model run
+  integer                             :: ntimes            ! total number of time steps in model run
   ! note: previously used 'real*8' instead of double precision
   
   integer                             :: curr_yr, curr_mo, curr_dy, curr_hr, curr_min, curr_sec  
@@ -82,14 +82,14 @@ contains
     this%start_datetime = date_to_unix(namelist%start_datehr)  ! returns seconds-since-1970-01-01 00
     this%end_datetime   = date_to_unix(namelist%end_datehr)    
     this%curr_datetime  = this%start_datetime
-    this%ntime          = int( (this%start_datetime - this%end_datetime)/this%dt )
+    this%ntimes         = int( (this%start_datetime - this%end_datetime)/this%dt + 1)   ! inclusive of last timestep
 
     ! other default assignments
     this%itime          = 1                    ! initialize the time loop counter at 1
     this%time_dbl       = 0.d0                 ! start model run at t = 0.0  
     
     ! assign input forcing and output fileunit numbers
-    do nh=1,n_hrus
+    do nh = 1, n_hrus
       this%forcing_fileunits(nh) = 250 + nh     
       this%output_fileunits(nh)  = 500 + nh       ! allows for 250 non-overlapping fileunits
       this%state_fileunits(nh)   = 750 + nh       ! allows for 250 non-overlapping fileunits

@@ -36,18 +36,14 @@ contains
               modelvar   => model%modelvar)
               
       !-----------------------------------------------------------------------------------------
-      !  read namelist, initialize data structures
+      !  read namelist, initialize data structures and read parameters
       !-----------------------------------------------------------------------------------------
       call namelist%readNamelist(config_file)
 
-      call runinfo%initInfo(namelist)        ! initialize run space-time info
-      call forcing%initForcing(namelist)        ! initialize forcing data type/structure
-      call modelvar%initModelVar(namelist)       ! initialize model states (incl. restarts)
-      !call parameters%Init(namelist)     ! read and/or initialize parameters
+      call runinfo%initInfo(namelist)          ! initialize run space-time info
+      call forcing%initForcing(namelist)       ! initialize forcing data type/structure
+      call modelvar%initModelVar(namelist)     ! initialize model states (incl. restarts)
       call parameters%initParams(namelist)     ! read and/or initialize parameters
-      
-      print*, 'number of hrus is: ', runinfo%n_hrus
-     
       
       ! read parameters from input file
       call read_snow17_parameters(parameters, namelist%snow17_param_file, runinfo)
@@ -57,27 +53,40 @@ contains
       ! Comp. dir. NGEN_FORCING_ACTIVE indicates Nextgen forcing is used
       !---------------------------------------------------------------------
 #ifndef NGEN_FORCING_ACTIVE
-      !call open_forcing_files(namelist%input_filename)
-      call open_and_init_forcing_files(namelist, runinfo, parameters)
+      call init_forcing_files(namelist, runinfo, parameters)
 #endif
       
       !---------------------------------------------------------------------
-      ! Create output file and add initial values
-      ! Compiler directive NGEN_OUTPUT_ACTIVE indicates Nextgen controls outputs
+      ! If warm start is specified, read an initial state from a restart file
+      ! Comp. dir. NGEN_READ_RESTART_ACTIVE indicates Nextgen sets the states
       !---------------------------------------------------------------------
-#ifndef NGEN_OUTPUT_ACTIVE
-      call open_and_init_output_files(namelist, runinfo, parameters)
-#endif
-
-#ifndef NGEN_RESTART_ACTIVE
+#ifndef NGEN_READ_RESTART_ACTIVE
       ! we *ARE* warm-starting from a state file
       ! read in external state files and overwrites namelist state variables
       if(namelist%warm_start_run .eq. 1) then
-        print*, 'RESTARTS NOT IMPLEMENTED YET -- CONTINUING WITH COLD START'
-        !call read_snow17_state(modelvar, namelist, parameters, runinfo)        ! SUBR. STILL NEEDS CHECKING in BMI version
+        call read_snow17_statefiles (modelvar, namelist, parameters, runinfo) 
       endif
 #endif
-      
+
+      !---------------------------------------------------------------------
+      ! Create output file and write header
+      ! Compiler directive NGEN_OUTPUT_ACTIVE indicates Nextgen controls outputs
+      !---------------------------------------------------------------------
+#ifndef NGEN_OUTPUT_ACTIVE
+      call init_output_files(namelist, runinfo, parameters)
+#endif
+
+      !---------------------------------------------------------------------
+      ! If a run to write initial states is specified, open/init state files
+      ! Comp. dir. NGEN_WRITE_RESTART_ACTIVE indicates Nextgen will do it
+      !---------------------------------------------------------------------
+#ifndef NGEN_WRITE_RESTART_ACTIVE
+      ! -- If namelist write_states == 1, open state files and write header
+      if(namelist%write_states .eq. 1) then
+        call init_new_state_files(namelist, runinfo, parameters)
+      endif
+#endif
+
     end associate ! terminate the associate block
 
   END SUBROUTINE initialize_from_file                
@@ -85,7 +94,6 @@ contains
              
              
   ! == Move the model ahead one time step ================================================================
-
   SUBROUTINE advance_in_time(model)
     type (snow17_type), intent (inout) :: model
     
@@ -95,17 +103,17 @@ contains
     call solve_snow17(model)
 
     ! -- advance run time info
-    model%runinfo%itime         = model%runinfo%itime + 1 ! increment the integer time by 1
-    !model%runinfo%time_dbl     = dble(model%runinfo%time_dbl + model%runinfo%dt)        ! increment relative model run time in seconds by DT
+    model%runinfo%itime         = model%runinfo%itime + 1                            ! increment the integer time by 1
+    !model%runinfo%time_dbl     = dble(model%runinfo%time_dbl + model%runinfo%dt)    ! increment relative model run time in seconds by DT
     model%runinfo%curr_datetime = model%runinfo%curr_datetime + model%runinfo%dt     ! increment unix model run time in seconds by DT
-    call unix_to_datehr (model%runinfo%curr_datetime, model%runinfo%curr_datehr)       ! update datehr field as well
+    call unix_to_datehr (model%runinfo%curr_datetime, model%runinfo%curr_datehr)     ! update datehr field as well
     call unix_to_date_elem (model%runinfo%curr_datetime, model%runinfo%curr_yr, model%runinfo%curr_mo, model%runinfo%curr_dy, &
                             model%runinfo%curr_hr, model%runinfo%curr_min, model%runinfo%curr_sec)
     
   END SUBROUTINE advance_in_time
   
 
-  ! == Run the model for one timestep and all spatial sub-units ==============================================
+  ! == Routing to run the model for one timestep and all spatial sub-units ================================
   SUBROUTINE solve_snow17(model)
     type (snow17_type), intent (inout) :: model
     
@@ -123,7 +131,7 @@ contains
       !   will read current timestep forcing for all snowbands
       !---------------------------------------------------------------------
 #ifndef NGEN_FORCING_ACTIVE
-      call read_areal_forcing_vec(namelist, parameters, runinfo, forcing)
+      call read_areal_forcing(namelist, parameters, runinfo, forcing)
 #endif
 
       !---------------------------------------------------------------------
@@ -131,21 +139,6 @@ contains
       !---------------------------------------------------------------------
       do nh=1, runinfo%n_hrus
 
-        !call snow_states_update (runinfo, parameters, forcing, states)
-        !set single precision inputs
-        !tair_sp   = real(forcing%tair(nh),   kind(sp))
-        !precip_sp = real(forcing%precip(nh), kind(sp))
-        
-        !call exsnow19(int(dt), int(dt/sec_hour), day(i), month(i), year(i),&
-    	  !SNOW17 INPUT AND OUTPUT VARIABLES
-  	    !  precip_sp,tair_sp,raim(i),sneqv(i),snow(i),snowh(i),&
-    	  !SNOW17 PARAMETERS
-          !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
-  	    !  real(latitude(nh),kind(sp)),scf(nh),mfmax(nh),mfmin(nh),uadj(nh),si(nh),nmf(nh),&
-        !  tipm(nh),mbase(nh),pxtemp(nh),plwhc(nh),daygm(nh),&
-        !  real(elev(nh),kind(sp)),real(pa,kind(sp)),adc,&
-          !SNOW17 CARRYOVER VARIABLES
-  		!  cs, tprev)
         call exsnow19(int(runinfo%dt), int(runinfo%dt/3600), runinfo%curr_dy, runinfo%curr_mo, runinfo%curr_yr, &
     	  ! SNOW17 INPUT AND OUTPUT VARIABLES
   	      forcing%precip(nh), forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
@@ -162,17 +155,17 @@ contains
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
         !---------------------------------------------------------------------
 #ifndef NGEN_OUTPUT_ACTIVE
-        call write_output_vec(namelist, runinfo, parameters, forcing, modelvar, nh)
-        
-        ! === write out STATE FILES for snow17 if needed ===
-        if(namelist%write_states > 0) then
-          print*, 'STATE WRITES NOT IMPLEMENTED YET -- CONTINUING WITH RUN'
-        
-          !call write_snow17_state(runinfo, namelist, modelvar)          ! SUBR. STILL NEEDS REFACTORING
-        end if
+        call write_snow17_output(namelist, runinfo, parameters, forcing, modelvar, nh)
 #endif
+        
+        ! === write out end-of-timestep values to STATE FILES for snow17 if requested in namelist ===
+#ifndef NGEN_WRITE_RESTART_ACTIVE
+        if(namelist%write_states .eq. 1) then
+          call write_snow17_statefile(runinfo, namelist, modelvar, nh)  
+        end if
+#endif        
     
-      end do  ! end of spatial sub-unit loop
+      end do  ! end of spatial sub-unit (snowband) loop
 
     end associate ! terminate associate block
     
@@ -194,17 +187,22 @@ contains
 #ifndef NGEN_OUTPUT_ACTIVE
     !call finalize_output()      ! short enough that another sub not needed unless to print some end of run info
       
-    ! -- close all files
-      do nh=1, model%runinfo%n_hrus
-        close(model%runinfo%forcing_fileunits(nh))
-        close(model%runinfo%output_fileunits(nh))
-      end do
-      close(model%runinfo%output_fileunits(nh+1))        ! combined output file (basin avg)
+    ! -- close all forcing and output files
+    do nh=1, model%runinfo%n_hrus
+      close(model%runinfo%forcing_fileunits(nh))
+      close(model%runinfo%output_fileunits(nh))
+    end do
+    close(model%runinfo%output_fileunits(nh+1))        ! combined output file (basin avg)
 
-    ! -- print final stdout messages for user incl. location of output & period of run
-    print*, 'Done'
+#endif
+
+#ifndef NGEN_WRITE_RESTART_ACTIVE
+    ! -- close state files
+    do nh=1, model%runinfo%n_hrus
+      close(model%runinfo%state_fileunits(nh))
+    end do
 #endif
   
-  END SUBROUTINE cleanup
+  end subroutine cleanup
 
 end module runModule              

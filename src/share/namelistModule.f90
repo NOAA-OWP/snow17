@@ -61,11 +61,15 @@ contains
     ! Optional namelist_file path/filename to read
     ! if not given, the program looks for 'namelist.input' in run directory as a default
     character(len=*), intent (in), optional :: namelist_file
+    
+    print*, 'Reading namelist'
 
     ! -- open and read namelist file
     open(33, file=namelist_file, form="formatted")
     read(33, SNOW17_CONTROL)
     close(33)
+    
+    print*, ' -- simulating basin ', main_id, ' with ', n_hrus, ' snowbands'
 
     ! -- transfer to namelist datatype
     this%main_id             = main_id
@@ -81,6 +85,12 @@ contains
     this%model_timestep      = model_timestep
     this%snow_state_out_root = snow_state_out_root
     this%snow_state_in_root  = snow_state_in_root
+    
+    ! -- namelist entry checks --
+    if (this%warm_start_run .eq. 1 .and. this%write_states .eq. 1) then
+      this%write_states = 0
+      print*, ' -- WARNING: cannot read and write state files at the same time.  Setting write_states option to 0 and continuing'
+    endif
 
   end subroutine readNamelist
 
