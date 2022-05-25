@@ -94,13 +94,23 @@ coverage.xml
 
 # Working directories
 alt_prev/
+not_used/
 
-# Temporary Development Notes
+# Temporary Development Files 
 LASTNEXT
 NOTES*
+*.tmp
+*.lnk
+*.not_used
+*.dev
 
 # python notebook files
 *.ipynb*
 
 # unzipped test case
 ./test_cases/ex1/
+test_cases/ex1/
+
+
+# local Makefile versions
+*.local

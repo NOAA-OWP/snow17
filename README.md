@@ -8,11 +8,8 @@ the NextGen simulation and forecasting framework.
 
   - **Technology stack**: The model code is written in FORTRAN with a driver that incorporates Basic Model Interface (BMI) commands to enable Snow17 to be run as a module within the NextGen framework. 
   is intended as standalone or as a module in a framework or other ecosystem.  It has been compiled using gnu, pgi and intel compilers. 
-  - **Status**: pre-Beta (still in initial development)
-  - **Links**:  This code was adapted from source code included in https://github.com/NCAR/NWS_hydro_models -- a version used in federally-funded streamflow forecasting research at NCAR. The original source code for that effort was obtained from the NWS Office of Hydrology around 2013. 
-  ** - Describe what sets this apart from related-projects. Linking to another doc or page is OK if this can't 
-  be expressed in a sentence or two.
-
+  - **Status**: Beta (runs but has not been extensively tested; validates against the orginal repository version listed below, which has been extensively used))
+  - **Links**:  This code was adapted from source code included in https://github.com/NCAR/NWS_hydro_models -- a version used in federally-funded streamflow forecasting research at NCAR. The original source code for that effort was obtained from the NWS Office of Hydrology around 2013. The code has since been copied and adapted into other research repositories. 
 
 ## Dependencies
 
@@ -28,34 +25,23 @@ To build and run Snow-17 with example data, check out the [INSTALL](INSTALL.md) 
 
 TBA:  If the software is configurable, describe it in detail, either here or in other documentation to which you link.
 
-## Usage
-
-TBA: Show users how to use the software. Be specific. Use appropriate formatting when showing code snippets.
-
 ## How to test the software
 
-TBA:  If the software includes automated tests, detail how to run those tests.
+Run the included test case example -- see INSTALL.md
 
 ## Known issues
 
-TBA:  Document any known significant shortcomings with the software.
+The restart capability has not been implemented, but will be shortly. 
+The software has so far only been tested with the gfortran compiler (on Cheyenne at NCAR)
 
 ## Getting help
 
-TBA: Instruct users how to get help with this software; this might include links to an issue tracker, wiki, mailing list, etc.
-
-**Example**
-
-If you have questions, concerns, bug reports, etc, please file an issue in this repository's Issue Tracker.
+Currently, questions may be sent to Andy Wood (andywood@ucar.edu). 
+If there are concerns or bug fixes, etc., please  file an issue in this repository's Issue Tracker.
 
 ## Getting involved
 
-TBA:  This section should detail why people should get involved and describe key areas you are
-currently focusing on; e.g., trying to get feedback on features, fixing certain bugs, building
-important pieces, etc.
-
-General instructions on _how_ to contribute should be stated with a link to [CONTRIBUTING](CONTRIBUTING.md).
-
+We encourage community involvement in code development. For more info, please check out our CONTRIBUTING document.
 
 ----
 
@@ -66,6 +52,8 @@ General instructions on _how_ to contribute should be stated with a link to [CON
 ----
 
 ## Credits and references
+
+If you wish to use or adapt the code in this repository, please make sure that your new repository credits this one as the original source of the code. 
 
 ### References
  - Anderson, E. A., 1973: National Weather Service River Forecast System-Snow Accumulation and Ablation Model. NOAA Tech. Memo. NWS Hydro-17, U.S. National Weather Service. [Avail- able from Office of Hydrologic Development, NOAA/NWS, 1325 East–West Highway, Silver Spring, MD 20910.]
