@@ -110,6 +110,7 @@ NOTES*
 # unzipped test case
 ./test_cases/ex1/
 test_cases/ex1/
+ex1/
 
 
 # local Makefile versions
