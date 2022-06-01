@@ -174,7 +174,7 @@ contains
     do nh=1, runinfo%n_hrus
 
       ! make filename to read
-      filename = trim(namelist%forcing_root) // trim(parameters%hru_id(nh))	
+      filename = trim(namelist%forcing_root) // trim(parameters%hru_id(nh)) // ".csv"
 
       !  Check if the specified file exists
       inquire(file = trim(filename), exist = lexist)

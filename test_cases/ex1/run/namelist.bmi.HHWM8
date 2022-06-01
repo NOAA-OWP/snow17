@@ -4,7 +4,7 @@
 ! -- basin config and path information
 main_id             = "HHWM8"      ! basin label or gage id 
 n_hrus              = 2            ! number of sub-areas in model
-forcing_root        = "../input/forcing_bmi/forcing.snow17bmi."
+forcing_root        = "../input/forcing/forcing.snow17bmi."
 output_root         = "../output/output.snow17bmi."
 snow17_param_file   = "../input/params/snow17_params.HHWM8.txt"
 output_hrus         = 1            ! output HRU results? (1=yes; 0=no)
