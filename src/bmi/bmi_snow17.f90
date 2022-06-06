@@ -97,8 +97,8 @@ module bmi_snow17_module
        component_name = "OWP Snow17 Module"
 
   ! Exchange items
-  integer, parameter :: input_item_count = 8
-  integer, parameter :: output_item_count = 6
+  integer, parameter :: input_item_count = 2
+  integer, parameter :: output_item_count = 4
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
   character (len=BMI_MAX_VAR_NAME), target, &
@@ -158,7 +158,7 @@ contains
     output_items(1) = 'precip_scf'   ! precip after scf scaling (mm)
     output_items(2) = 'sneqv'        ! snow water equivalent (mm)
     output_items(3) = 'snowh'        ! snow height (mm)
-    output_items(5) = 'raim'         ! rain plus snowmelt (mm/s)
+    output_items(4) = 'raim'         ! rain plus snowmelt (mm/s)
 
     names => output_items
     bmi_status = BMI_SUCCESS
