@@ -517,6 +517,15 @@ contains
     end if  ! IF case for writing HRU-specific output to file (not including states)
 
     ! ==== if all snowbands have been run, sum across snowbands with weighting for snowband area ====
+    
+    ! initialize for timestep
+    forcing%tair_comb       = 0.0
+    forcing%precip_comb     = 0.0
+    forcing%precip_scf_comb = 0.0
+    modelvar%sneqv_comb     = 0.0
+    modelvar%snowh_comb     = 0.0
+    modelvar%raim_comb      = 0.0
+        
     if (n_curr_hru .eq. runinfo%n_hrus) then 
       do nh=1, runinfo%n_hrus
         forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
