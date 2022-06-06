@@ -45,9 +45,9 @@ endif
 
 # --- Define flags
 ifeq "$(FC)" "gfortran"
-  FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none -cpp
-  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp
-  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp
+  FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none -cpp -fcheckall
+  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheckall
+  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheckall
 endif
 
 ifeq "$(FC)" "ifort"
