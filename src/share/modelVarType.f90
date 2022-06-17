@@ -42,7 +42,8 @@ module modelVarType
     allocate(this%snowh (1:namelist%n_hrus))
     allocate(this%snow  (1:namelist%n_hrus))
     allocate(this%tprev (1:namelist%n_hrus))
-    allocate(this%cs    (1:namelist%n_hrus, 1:19))
+    !allocate(this%cs    (1:namelist%n_hrus, 1:19))
+    allocate(this%cs    (1:19, 1:namelist%n_hrus))
     
     ! -- default assignments
     this%raim(:)       = 0.0

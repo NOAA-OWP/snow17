@@ -52,7 +52,8 @@ contains
     allocate(this%mbase(n_hrus))
     allocate(this%plwhc(n_hrus))
     allocate(this%daygm(n_hrus))    
-    allocate(this%adc(n_hrus, 11))    ! 11 points (0.0 to 1.0 in 0.1 increments)
+    !allocate(this%adc(n_hrus, 11))    ! 11 points (0.0 to 1.0 in 0.1 increments)
+    allocate(this%adc(11,n_hrus))    ! 11 points (0.0 to 1.0 in 0.1 increments)
     
     ! assign defaults (if any)
     this%total_area  = huge(1.0)
