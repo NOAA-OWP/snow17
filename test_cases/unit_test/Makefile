@@ -71,7 +71,7 @@ $(snow19_objs): %.o: ../../src/snow19/%.f
 test: $(CMD)
 	cd ../../test_cases; tar -zxvf ex1.tgz; \
         cd ex1/run; \
-	../../../src/test/snow17_driver_test.exe ./namelist.bmi.HHWM8
+	../../../test_cases/unit_test/snow17_driver_test.exe ./namelist.bmi.HHWM8
 
 # This command cleans up
 clean:
