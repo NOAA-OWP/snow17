@@ -59,20 +59,20 @@ module bmi_snow17_module
           get_value_int, &
           get_value_float, &
           get_value_double
-!      procedure :: get_value_ptr_int => snow17_get_ptr_int
-!      procedure :: get_value_ptr_float => snow17_get_ptr_float
-!      procedure :: get_value_ptr_double => snow17_get_ptr_double
-!      generic :: get_value_ptr => &
-!           get_value_ptr_int, &
-!           get_value_ptr_float, &
-!           get_value_ptr_double
-!      procedure :: get_value_at_indices_int => snow17_get_at_indices_int
-!      procedure :: get_value_at_indices_float => snow17_get_at_indices_float
-!      procedure :: get_value_at_indices_double => snow17_get_at_indices_double
-!      generic :: get_value_at_indices => &
-!           get_value_at_indices_int, &
-!           get_value_at_indices_float, &
-!           get_value_at_indices_double
+      procedure :: get_value_ptr_int => snow17_get_ptr_int
+      procedure :: get_value_ptr_float => snow17_get_ptr_float
+      procedure :: get_value_ptr_double => snow17_get_ptr_double
+      generic :: get_value_ptr => &
+           get_value_ptr_int, &
+           get_value_ptr_float, &
+           get_value_ptr_double
+      procedure :: get_value_at_indices_int => snow17_get_at_indices_int
+      procedure :: get_value_at_indices_float => snow17_get_at_indices_float
+      procedure :: get_value_at_indices_double => snow17_get_at_indices_double
+      generic :: get_value_at_indices => &
+           get_value_at_indices_int, &
+           get_value_at_indices_float, &
+           get_value_at_indices_double
      procedure :: set_value_int => snow17_set_int
      procedure :: set_value_float => snow17_set_float
      procedure :: set_value_double => snow17_set_double
@@ -80,13 +80,13 @@ module bmi_snow17_module
           set_value_int, &
           set_value_float, &
           set_value_double
-!      procedure :: set_value_at_indices_int => snow17_set_at_indices_int
-!      procedure :: set_value_at_indices_float => snow17_set_at_indices_float
-!      procedure :: set_value_at_indices_double => snow17_set_at_indices_double
-!      generic :: set_value_at_indices => &
-!           set_value_at_indices_int, &
-!           set_value_at_indices_float, &
-!           set_value_at_indices_double
+      procedure :: set_value_at_indices_int => snow17_set_at_indices_int
+      procedure :: set_value_at_indices_float => snow17_set_at_indices_float
+      procedure :: set_value_at_indices_double => snow17_set_at_indices_double
+      generic :: set_value_at_indices => &
+           set_value_at_indices_int, &
+           set_value_at_indices_float, &
+           set_value_at_indices_double
 !      procedure :: print_model_info
   end type bmi_snow17
 
@@ -701,22 +701,22 @@ contains
 
     select case(name)
     case("precip")
-       dest = sizeof(this%model%forcing%precip_comb)    ! 'sizeof' in gcc & ifort
+       dest(1) = this%model%forcing%precip_comb
        bmi_status = BMI_SUCCESS
     case("tair")
-       dest = sizeof(this%model%forcing%tair_comb)      ! 'sizeof' in gcc & ifort
+       dest(1) = this%model%forcing%tair_comb
        bmi_status = BMI_SUCCESS
     case("precip_scf")
-       dest = sizeof(this%model%forcing%precip_scf_comb)     ! 'sizeof' in gcc & ifort
+       dest(1) = this%model%forcing%precip_scf_comb
        bmi_status = BMI_SUCCESS
     case("sneqv")
-       dest = sizeof(this%model%modelvar%sneqv_comb)     ! 'sizeof' in gcc & ifort
+       dest(1) = this%model%modelvar%sneqv_comb
        bmi_status = BMI_SUCCESS
     case("snowh")
-       dest = sizeof(this%model%modelvar%snowh_comb)     ! 'sizeof' in gcc & ifort
+       dest(1) = this%model%modelvar%snowh_comb
        bmi_status = BMI_SUCCESS
     case("raim")
-       dest = sizeof(this%model%modelvar%raim_comb)      ! 'sizeof' in gcc & ifort
+       dest(1) = this%model%modelvar%raim_comb
        bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.0
@@ -744,124 +744,110 @@ contains
 
 ! !=================== get_value_ptr functions not implemented yet =================
 
-!   ! Get a reference to an integer-valued variable, flattened.
-!   function snow17_get_ptr_int(this, name, dest_ptr) result (bmi_status)
-!     class (bmi_snow17), intent(in) :: this
-!     character (len=*), intent(in) :: name
-!     integer, pointer, intent(inout) :: dest_ptr(:)
-!     integer :: bmi_status
-!     type (c_ptr) :: src
-!     integer :: n_elements
-!
-! !==================== UPDATE IMPLEMENTATION IF NECESSARY FOR INTEGER VARS =================
-!
-!     select case(name)
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_get_ptr_int
-!
-!   ! Get a reference to a real-valued variable, flattened.
-!   function snow17_get_ptr_float(this, name, dest_ptr) result (bmi_status)
-!     class (bmi_snow17), intent(in) :: this
-!     character (len=*), intent(in) :: name
-!     real, pointer, intent(inout) :: dest_ptr(:)
-!     integer :: bmi_status, status
-!     type (c_ptr) :: src
-!     integer :: n_elements, gridid
-!
-!     select case(name)
-!     case("SFCPRS")
-!        src = c_loc(this%model%forcing%sfcprs)
-!        status = this%get_var_grid(name,gridid)
-!        status = this%get_grid_size(gridid, n_elements)
-!        call c_f_pointer(src, dest_ptr, [n_elements])
-!        bmi_status = BMI_SUCCESS
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_get_ptr_float
-!
-!   ! Get a reference to an double-valued variable, flattened.
-!   function snow17_get_ptr_double(this, name, dest_ptr) result (bmi_status)
-!     class (bmi_snow17), intent(in) :: this
-!     character (len=*), intent(in) :: name
-!     double precision, pointer, intent(inout) :: dest_ptr(:)
-!     integer :: bmi_status
-!     type (c_ptr) :: src
-!     integer :: n_elements
-!
-! !==================== UPDATE IMPLEMENTATION IF NECESSARY FOR DOUBLE VARS =================\
-!
-!     select case(name)
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_get_ptr_double
-!
-!   ! Get values of an integer variable at the given locations.
-!   function snow17_get_at_indices_int(this, name, dest, inds) &
-!        result (bmi_status)
-!     class (bmi_snow17), intent(in) :: this
-!     character (len=*), intent(in) :: name
-!     integer, intent(inout) :: dest(:)
-!     integer, intent(in) :: inds(:)
-!     integer :: bmi_status
-!     type (c_ptr) src
-!     integer, pointer :: src_flattened(:)
-!     integer :: i, n_elements
-!
-!     select case(name)
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_get_at_indices_int
-!
-!   ! Get values of a real variable at the given locations.
-!   function snow17_get_at_indices_float(this, name, dest, inds) &
-!        result (bmi_status)
-!     class (bmi_snow17), intent(in) :: this
-!     character (len=*), intent(in) :: name
-!     real, intent(inout) :: dest(:)
-!     integer, intent(in) :: inds(:)
-!     integer :: bmi_status
-!     type (c_ptr) src
-!     real, pointer :: src_flattened(:)
-!     integer :: i, n_elements
-!
-!     select case(name)
-!     case("plate_surface__temperature")
-!        src = c_loc(this%model%temperature(1,1))
-!        call c_f_pointer(src, src_flattened, [this%model%n_y * this%model%n_x])
-!        n_elements = size(inds)
-!        do i = 1, n_elements
-!           dest(i) = src_flattened(inds(i))
-!        end do
-!        bmi_status = BMI_SUCCESS
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_get_at_indices_float
-!
-!   ! Get values of a double variable at the given locations.
-!   function snow17_get_at_indices_double(this, name, dest, inds) &
-!        result (bmi_status)
-!     class (bmi_snow17), intent(in) :: this
-!     character (len=*), intent(in) :: name
-!     double precision, intent(inout) :: dest(:)
-!     integer, intent(in) :: inds(:)
-!     integer :: bmi_status
-!     type (c_ptr) src
-!     double precision, pointer :: src_flattened(:)
-!     integer :: i, n_elements
-!
-!     select case(name)
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_get_at_indices_double
-!
-  ! Set new integer values.
+   ! Get a reference to an integer-valued variable, flattened.
+   function snow17_get_ptr_int(this, name, dest_ptr) result (bmi_status)
+     class (bmi_snow17), intent(in) :: this
+     character (len=*), intent(in) :: name
+     integer, pointer, intent(inout) :: dest_ptr(:)
+     integer :: bmi_status
+     type (c_ptr) :: src
+     integer :: n_elements
+
+ !==================== UPDATE IMPLEMENTATION IF NECESSARY FOR INTEGER VARS =================
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_get_ptr_int
+
+   ! Get a reference to a real-valued variable, flattened.
+   function snow17_get_ptr_float(this, name, dest_ptr) result (bmi_status)
+     class (bmi_snow17), intent(in) :: this
+     character (len=*), intent(in) :: name
+     real, pointer, intent(inout) :: dest_ptr(:)
+    integer :: bmi_status, status
+     type (c_ptr) :: src
+     integer :: n_elements, gridid
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_get_ptr_float
+
+   ! Get a reference to an double-valued variable, flattened.
+   function snow17_get_ptr_double(this, name, dest_ptr) result (bmi_status)
+     class (bmi_snow17), intent(in) :: this
+     character (len=*), intent(in) :: name
+     double precision, pointer, intent(inout) :: dest_ptr(:)
+     integer :: bmi_status
+     type (c_ptr) :: src
+     integer :: n_elements
+
+ !==================== UPDATE IMPLEMENTATION IF NECESSARY FOR DOUBLE VARS =================\
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_get_ptr_double
+
+   ! Get values of an integer variable at the given locations.
+   function snow17_get_at_indices_int(this, name, dest, inds) &
+        result (bmi_status)
+     class (bmi_snow17), intent(in) :: this
+     character (len=*), intent(in) :: name
+     integer, intent(inout) :: dest(:)
+     integer, intent(in) :: inds(:)
+     integer :: bmi_status
+     type (c_ptr) src
+     integer, pointer :: src_flattened(:)
+     integer :: i, n_elements
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_get_at_indices_int
+
+   ! Get values of a real variable at the given locations.
+   function snow17_get_at_indices_float(this, name, dest, inds) &
+        result (bmi_status)
+     class (bmi_snow17), intent(in) :: this
+    character (len=*), intent(in) :: name
+     real, intent(inout) :: dest(:)
+     integer, intent(in) :: inds(:)
+     integer :: bmi_status
+     type (c_ptr) src
+     real, pointer :: src_flattened(:)
+     integer :: i, n_elements
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_get_at_indices_float
+
+   ! Get values of a double variable at the given locations.
+   function snow17_get_at_indices_double(this, name, dest, inds) &
+        result (bmi_status)
+     class (bmi_snow17), intent(in) :: this
+     character (len=*), intent(in) :: name
+     double precision, intent(inout) :: dest(:)
+     integer, intent(in) :: inds(:)
+     integer :: bmi_status
+     type (c_ptr) src
+     double precision, pointer :: src_flattened(:)
+     integer :: i, n_elements
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_get_at_indices_double
+
+ ! Set new integer values.
   function snow17_set_int(this, name, src) result (bmi_status)
     class (bmi_snow17), intent(inout) :: this
     character (len=*), intent(in) :: name
@@ -926,68 +912,61 @@ contains
        bmi_status = BMI_FAILURE
     end select
   end function snow17_set_double
-!
-!   ! Set integer values at particular locations.
-!   function snow17_set_at_indices_int(this, name, inds, src) &
-!        result (bmi_status)
-!     class (bmi_snow17), intent(inout) :: this
-!     character (len=*), intent(in) :: name
-!     integer, intent(in) :: inds(:)
-!     integer, intent(in) :: src(:)
-!     integer :: bmi_status
-!     type (c_ptr) dest
-!     integer, pointer :: dest_flattened(:)
-!     integer :: i
-!
-!     select case(name)
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_set_at_indices_int
-!
-!   ! Set real values at particular locations.
-!   function snow17_set_at_indices_float(this, name, inds, src) &
-!        result (bmi_status)
-!     class (bmi_snow17), intent(inout) :: this
-!     character (len=*), intent(in) :: name
-!     integer, intent(in) :: inds(:)
-!     real, intent(in) :: src(:)
-!     integer :: bmi_status
-!     type (c_ptr) dest
-!     real, pointer :: dest_flattened(:)
-!     integer :: i
-!
-!     select case(name)
-!     case("plate_surface__temperature")
-!        dest = c_loc(this%model%temperature(1,1))
-!        call c_f_pointer(dest, dest_flattened, [this%model%n_y * this%model%n_x])
-!        do i = 1, size(inds)
-!           dest_flattened(inds(i)) = src(i)
-!        end do
-!        bmi_status = BMI_SUCCESS
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_set_at_indices_float
-!
-!   ! Set double values at particular locations.
-!   function snow17_set_at_indices_double(this, name, inds, src) &
-!        result (bmi_status)
-!     class (bmi_snow17), intent(inout) :: this
-!     character (len=*), intent(in) :: name
-!     integer, intent(in) :: inds(:)
-!     double precision, intent(in) :: src(:)
-!     integer :: bmi_status
-!     type (c_ptr) dest
-!     double precision, pointer :: dest_flattened(:)
-!     integer :: i
-!
-!     select case(name)
-!     case default
-!        bmi_status = BMI_FAILURE
-!     end select
-!   end function snow17_set_at_indices_double
-!
+
+   ! Set integer values at particular locations.
+   function snow17_set_at_indices_int(this, name, inds, src) &
+        result (bmi_status)
+     class (bmi_snow17), intent(inout) :: this
+     character (len=*), intent(in) :: name
+     integer, intent(in) :: inds(:)
+     integer, intent(in) :: src(:)
+     integer :: bmi_status
+     type (c_ptr) dest
+     integer, pointer :: dest_flattened(:)
+     integer :: i
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_set_at_indices_int
+
+   ! Set real values at particular locations.
+   function snow17_set_at_indices_float(this, name, inds, src) &
+        result (bmi_status)
+     class (bmi_snow17), intent(inout) :: this
+     character (len=*), intent(in) :: name
+     integer, intent(in) :: inds(:)
+     real, intent(in) :: src(:)
+     integer :: bmi_status
+     type (c_ptr) dest
+     real, pointer :: dest_flattened(:)
+     integer :: i
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_set_at_indices_float
+
+   ! Set double values at particular locations.
+   function snow17_set_at_indices_double(this, name, inds, src) &
+        result (bmi_status)
+     class (bmi_snow17), intent(inout) :: this
+     character (len=*), intent(in) :: name
+     integer, intent(in) :: inds(:)
+     double precision, intent(in) :: src(:)
+     integer :: bmi_status
+     type (c_ptr) dest
+     double precision, pointer :: dest_flattened(:)
+     integer :: i
+
+     select case(name)
+     case default
+        bmi_status = BMI_FAILURE
+     end select
+   end function snow17_set_at_indices_double
+
 !   ! A non-BMI helper routine to advance the model by a fractional time step.
 !   subroutine update_frac(this, time_frac)
 !     class (bmi_snow17), intent(inout) :: this

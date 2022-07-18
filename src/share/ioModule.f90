@@ -96,37 +96,39 @@ contains
             read(readline, *, iostat=ios) this%daygm
             n_params_read = n_params_read + 1
           case ('adc1')
-            read(readline, *, iostat=ios) this%adc(:,1)
+            !read(readline, *, iostat=ios) this%adc(:,1)
+            read(readline, *, iostat=ios) this%adc(1,:)
             n_params_read = n_params_read + 1
           case ('adc2')
-            read(readline, *, iostat=ios) this%adc(:,2)
+            !read(readline, *, iostat=ios) this%adc(:,2)
+            read(readline, *, iostat=ios) this%adc(2,:)
             n_params_read = n_params_read + 1
           case ('adc3')
-            read(readline, *, iostat=ios) this%adc(:,3)
+            read(readline, *, iostat=ios) this%adc(3,:)
             n_params_read = n_params_read + 1
           case ('adc4')
-            read(readline, *, iostat=ios) this%adc(:,4)
+            read(readline, *, iostat=ios) this%adc(4,:)
             n_params_read = n_params_read + 1
           case ('adc5')
-            read(readline, *, iostat=ios) this%adc(:,5)
+            read(readline, *, iostat=ios) this%adc(5,:)
             n_params_read = n_params_read + 1
           case ('adc6')
-            read(readline, *, iostat=ios) this%adc(:,6)
+            read(readline, *, iostat=ios) this%adc(6,:)
             n_params_read = n_params_read + 1
           case ('adc7')
-            read(readline, *, iostat=ios) this%adc(:,7)
+            read(readline, *, iostat=ios) this%adc(7,:)
             n_params_read = n_params_read + 1
           case ('adc8')
-            read(readline, *, iostat=ios) this%adc(:,8)
+            read(readline, *, iostat=ios) this%adc(8,:)
             n_params_read = n_params_read + 1
           case ('adc9')
-            read(readline, *, iostat=ios) this%adc(:,9)
+            read(readline, *, iostat=ios) this%adc(9,:)
             n_params_read = n_params_read + 1
           case ('adc10')
-            read(readline, *, iostat=ios) this%adc(:,10)
+            read(readline, *, iostat=ios) this%adc(10,:)
             n_params_read = n_params_read + 1
           case ('adc11')
-            read(readline, *, iostat=ios) this%adc(:,11)
+            read(readline, *, iostat=ios) this%adc(11,:)
             n_params_read = n_params_read + 1
           case default
             print *, 'Parameter ',param,' not recognized in snow file'
@@ -329,6 +331,7 @@ contains
         ! make filename to read
         filename = trim(namelist%output_root) // trim(parameters%hru_id(nh)) // '.txt'	
 
+        write(*,*) "open fileunit: ", nh+1
         ! Open the output files
         open(runinfo%output_fileunits(nh+1), file = trim(filename), form = 'formatted', action = 'write', status='replace', iostat = ierr)
         if (ierr /= 0) then
@@ -400,7 +403,7 @@ contains
     ! write fixed-width format line of state file for current timesstep and sub-unit
     41 FORMAT(I0.4, 3(I0.2), 20(F20.12))    ! use maximum precision (for double)
     write(runinfo%state_fileunits(n_curr_hru), 41, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
-          modelvar%tprev(n_curr_hru), modelvar%cs(n_curr_hru,:)
+          modelvar%tprev(n_curr_hru), modelvar%cs(:,n_curr_hru)
     if(ierr /= 0) then
       print*, 'ERROR writing state file information for sub-unit ', n_curr_hru; stop
     endif
@@ -459,7 +462,7 @@ contains
       ! read each row and check to see if the date matches the initial state date
       do while(ios .eq. 0)
   
-        read(95, *, IOSTAT=ios) statefile_datehr, modelvar%tprev(hru), modelvar%cs(hru,:)
+        read(95, *, IOSTAT=ios) statefile_datehr, modelvar%tprev(hru), modelvar%cs(:,hru)
   
         ! checks either for real date or special keyword identifying the state to use
         !   this functionality facilitates ESP forecast initialization
