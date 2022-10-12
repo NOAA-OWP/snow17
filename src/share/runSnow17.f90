@@ -147,9 +147,9 @@ contains
   	      parameters%latitude(nh), parameters%scf(nh), parameters%mfmax(nh), parameters%mfmin(nh), &
           parameters%uadj(nh), parameters%si(nh), parameters%nmf(nh), parameters%tipm(nh), parameters%mbase(nh), &
           parameters%pxtemp(nh), parameters%plwhc(nh), parameters%daygm(nh), parameters%elev(nh), forcing%pa(nh), &
-          parameters%adc(nh,:), &
+          parameters%adc(:,nh), &
           ! SNOW17 CARRYOVER VARIABLES
-  		  modelvar%cs(nh,:), modelvar%tprev(nh) )             
+  		  modelvar%cs(:,nh), modelvar%tprev(nh) )             
 
         !---------------------------------------------------------------------
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
@@ -192,7 +192,10 @@ contains
       close(model%runinfo%forcing_fileunits(nh))
       close(model%runinfo%output_fileunits(nh))
     end do
-    close(model%runinfo%output_fileunits(nh+1))        ! combined output file (basin avg)
+    !
+    !
+    ! Now 'nh' value is (runinfo%n_hrus + 1)
+    close(model%runinfo%output_fileunits(nh)) ! combined output file (basin avg)
 
 #endif
 

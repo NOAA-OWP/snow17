@@ -52,7 +52,18 @@ contains
     allocate(this%mbase(n_hrus))
     allocate(this%plwhc(n_hrus))
     allocate(this%daygm(n_hrus))    
-    allocate(this%adc(n_hrus, 11))    ! 11 points (0.0 to 1.0 in 0.1 increments)
+
+    !
+    !Reversed the row and column for this `adc' array such that
+    ! we can pass a slice of the array to other subroutines in
+    ! a contiguous memory. Otherwise, we will receive warnings
+    ! at runtime about creation of a temporary array and the performance
+    ! is impaired. The reason is that
+    ! Fortran stores arrays as 'column major'. 
+    !
+    !allocate(this%adc(n_hrus, 11)) !=> runtime warning    ! 11 points (0.0 to 1.0 in 0.1 increments)
+    !
+    allocate(this%adc(11,n_hrus))    ! 11 points (0.0 to 1.0 in 0.1 increments)
     
     ! assign defaults (if any)
     this%total_area  = huge(1.0)
