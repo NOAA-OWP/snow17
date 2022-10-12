@@ -90,11 +90,11 @@ contains
     
     ! assign input forcing and output fileunit numbers
     do nh = 1, n_hrus
-      this%forcing_fileunits(nh) = 250 + nh     
-      this%output_fileunits(nh)  = 500 + nh       ! allows for 250 non-overlapping fileunits
-      this%state_fileunits(nh)   = 750 + nh       ! allows for 250 non-overlapping fileunits
+      this%forcing_fileunits(nh)    = 250 + nh     
+      this%output_fileunits(nh)     = 500 + nh       ! allows for 250 non-overlapping fileunits
+      this%state_fileunits(nh)      = 750 + nh       ! allows for 250 non-overlapping fileunits
     end do
-    this%output_fileunits(nh)    = 500 + nh + 1   ! add one more unit for combined ouptuts
+    this%output_fileunits(n_hrus+1) = 500 + n_hrus + 1   ! add one more unit for combined ouptuts
 
   end subroutine initInfo
 
