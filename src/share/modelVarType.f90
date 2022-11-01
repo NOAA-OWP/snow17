@@ -8,10 +8,10 @@ module modelVarType
   type, public :: modelvar_type
 
     ! main model states and flux variable
-    real, dimension(:), allocatable    :: sneqv  ! snow water equivalent (unit)
-    real, dimension(:), allocatable    :: snowh  ! snow height
-    real, dimension(:), allocatable    :: snow   ! snow (?) -- seems same as snowh but used in snow19()
-    real, dimension(:), allocatable    :: raim   ! rain and melt output
+    real, dimension(:), allocatable    :: sneqv  ! snow water equivalent (mm)
+    real, dimension(:), allocatable    :: snowh  ! snow height (mm)
+    real, dimension(:), allocatable    :: snow   ! snow (?) -- seems same as snowh but used in snow19() (mm)
+    real, dimension(:), allocatable    :: raim   ! rain and melt output (mm/s)
   
     ! other states and carryover variables
     real, dimension(:), allocatable    :: tprev
@@ -43,14 +43,12 @@ module modelVarType
     allocate(this%snow  (1:namelist%n_hrus))
     allocate(this%tprev (1:namelist%n_hrus))
     !
-    !Reversed the row and column for this `cs' array such that
+    ! Reversed the row and column for this `cs' array such that
     ! we can pass a slice of the array to other subroutines in
     ! a contiguous memory. Otherwise, we will receive warnings
     ! at runtime about creation of a temporary array. and the performance
     ! is impaired. The reason is that
     ! Fortran stores arrays as 'column major'. 
-    !
-    !allocate(this%cs    (1:namelist%n_hrus, 1:19)) => runtime warnings
     !
     allocate(this%cs    (1:19, 1:namelist%n_hrus))
     

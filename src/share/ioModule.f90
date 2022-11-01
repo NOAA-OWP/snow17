@@ -507,13 +507,17 @@ contains
     ! ==== WRITE output for current area simulation ====
     ! Note:  write order should match header written by open_and_init_output_files()
     
-    32 FORMAT(I4.4, 3(1x,I2.2), 6(F10.3))
+    !32 FORMAT(I4.4, 3(1x,I2.2), F10.3, 2(F15.10), 2(F10.3), F15.10)   ! if writing pcp & raim as rates
+    32 FORMAT(I4.4, 3(1x,I2.2), 6(F10.3))                              ! if writing them as depths
 
     ! if user setting is to write out information for each snowband, open the individual files
     if (namelist%output_hrus == 1 .and. runinfo%n_hrus > 1) then
-      write(runinfo%output_fileunits(n_curr_hru+1), 32, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
-            forcing%tair(n_curr_hru), forcing%precip(n_curr_hru), forcing%precip(n_curr_hru)*parameters%scf(n_curr_hru), &
-            modelvar%sneqv(n_curr_hru)*1000., modelvar%snowh(n_curr_hru), modelvar%raim(n_curr_hru)
+      ! writing precip & raim vars as depths (mm) not rates for ease of comparison w/ SWE
+      write(runinfo%output_fileunits(n_curr_hru+1), 32, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, &
+                                                                     runinfo%curr_dy, runinfo%curr_hr, &
+            forcing%tair(n_curr_hru), forcing%precip(n_curr_hru)*runinfo%dt, &
+            forcing%precip_scf(n_curr_hru)*runinfo%dt, &
+            modelvar%sneqv(n_curr_hru)*1000., modelvar%snowh(n_curr_hru), modelvar%raim(n_curr_hru)*runinfo%dt
       if(ierr /= 0) then
         print*, 'ERROR writing output information for basin average'; stop
       endif            
@@ -533,7 +537,7 @@ contains
       do nh=1, runinfo%n_hrus
         forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
         forcing%precip_comb      = forcing%precip_comb + forcing%precip(nh) * parameters%hru_area(nh)
-        forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip(nh) * parameters%hru_area(nh) * parameters%scf(nh)
+        forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip_scf(nh) * parameters%hru_area(nh)
         modelvar%sneqv_comb      = modelvar%sneqv_comb + modelvar%sneqv(nh) * parameters%hru_area(nh) 
         modelvar%snowh_comb      = modelvar%snowh_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
         modelvar%raim_comb       = modelvar%raim_comb + modelvar%raim(nh) * parameters%hru_area(nh)
@@ -548,9 +552,10 @@ contains
       modelvar%raim_comb       = modelvar%raim_comb / parameters%total_area
 
       ! -- write out combined file that is similar to each area file, but add flow variable in CFS units
-      write(runinfo%output_fileunits(1), 32, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
-            forcing%tair_comb, forcing%precip_comb, forcing%precip_scf_comb, &
-            modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%raim_comb
+      write(runinfo%output_fileunits(1), 32, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, &
+                                                          runinfo%curr_dy, runinfo%curr_hr, &
+            forcing%tair_comb, forcing%precip_comb*runinfo%dt, forcing%precip_scf_comb*runinfo%dt, &
+            modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%raim_comb*runinfo%dt
       if(ierr /= 0) then
         print*, 'ERROR writing output information for sub-unit ', n_curr_hru; stop
       endif
