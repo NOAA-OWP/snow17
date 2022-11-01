@@ -251,38 +251,26 @@ contains
     bmi_status = BMI_SUCCESS
   end function snow17_update
 
-  ! Advance the model until the given time.
   function snow17_update_until(this, time) result (bmi_status)
     class (bmi_snow17), intent(inout) :: this
     double precision, intent(in) :: time
+    ! local variables
     integer :: bmi_status
-    double precision :: n_steps_real
-    integer :: n_steps, i, s
+    double precision :: tmp_time
+    integer :: s
 
-    ! new code to work with unix time convention
     ! check to see if desired time to advance to is earlier than current time (can't go backwards)
     if (time < this%model%runinfo%curr_datetime) then
        bmi_status = BMI_FAILURE
        return
     end if
     ! otherwise try to advance to end time
-    do while ( time < this%model%runinfo%end_datetime )
+    tmp_time = time
+    do while ( tmp_time < this%model%runinfo%end_datetime )
        s = this%update()
+       tmp_time = this%model%runinfo%curr_datetime
     end do
 
-    ! original code working with time run convention from 0 to n*dt end_time
-    !if (time < this%model%runinfo%time_dbl) then
-    !   bmi_status = BMI_FAILURE
-    !   return
-    !end if
-
-    !n_steps_real = (time - this%model%runinfo%time_dbl) / this%model%runinfo%dt
-    !n_steps = floor(n_steps_real)
-    !do i = 1, n_steps
-    !   s = this%update()
-    !end do
-    !     call update_frac(this, n_steps_real - dble(n_steps)) ! NOT IMPLEMENTED
-    
     bmi_status = BMI_SUCCESS
   end function snow17_update_until
 

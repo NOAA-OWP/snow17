@@ -92,7 +92,6 @@ contains
   END SUBROUTINE initialize_from_file                
               
              
-             
   ! == Move the model ahead one time step ================================================================
   SUBROUTINE advance_in_time(model)
     type (snow17_type), intent (inout) :: model
@@ -119,6 +118,7 @@ contains
     
     ! local parameters
     integer            :: nh             ! counter for snowbands
+    real               :: prcp_mm        ! precip as a depth (for input to snow17) (mm)
 
     associate(namelist   => model%namelist,   &
               runinfo    => model%runinfo,    &
@@ -139,9 +139,11 @@ contains
       !---------------------------------------------------------------------
       do nh=1, runinfo%n_hrus
 
+        prcp_mm = forcing%precip(nh)*runinfo%dt   ! convert prcp input to a depth per timestep (mm)
+
         call exsnow19(int(runinfo%dt), int(runinfo%dt/3600), runinfo%curr_dy, runinfo%curr_mo, runinfo%curr_yr, &
     	  ! SNOW17 INPUT AND OUTPUT VARIABLES
-  	      forcing%precip(nh), forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
+          prcp_mm, forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
     	  ! SNOW17 PARAMETERS
           !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
   	      parameters%latitude(nh), parameters%scf(nh), parameters%mfmax(nh), parameters%mfmin(nh), &
@@ -149,7 +151,10 @@ contains
           parameters%pxtemp(nh), parameters%plwhc(nh), parameters%daygm(nh), parameters%elev(nh), forcing%pa(nh), &
           parameters%adc(:,nh), &
           ! SNOW17 CARRYOVER VARIABLES
-  		  modelvar%cs(:,nh), modelvar%tprev(nh) )             
+  		  modelvar%cs(:,nh), modelvar%tprev(nh) )
+
+        ! convert raim output to a rate (mm/s)
+        modelvar%raim(nh) = modelvar%raim(nh) / runinfo%dt
 
         !---------------------------------------------------------------------
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
