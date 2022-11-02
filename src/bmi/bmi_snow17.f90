@@ -251,6 +251,7 @@ contains
     bmi_status = BMI_SUCCESS
   end function snow17_update
 
+  ! Advance the model until the given time.
   function snow17_update_until(this, time) result (bmi_status)
     class (bmi_snow17), intent(inout) :: this
     double precision, intent(in) :: time
@@ -572,13 +573,13 @@ contains
 
     select case(name)
     case("precip")
-       units = "mm"
+       units = "mm/s"
        bmi_status = BMI_SUCCESS
     case("tair")
-       units = "C"
+       units = "degC"
        bmi_status = BMI_SUCCESS
     case("precip_scf")
-       units = "mm"
+       units = "mm/s"
        bmi_status = BMI_SUCCESS
     case("sneqv")
        units = "mm"
@@ -587,7 +588,7 @@ contains
        units = "mm"
        bmi_status = BMI_SUCCESS
     case("raim")
-       units = "mm"
+       units = "mm/s"
        bmi_status = BMI_SUCCESS
     case default
        units = "-"
@@ -601,25 +602,28 @@ contains
     character (len=*), intent(in) :: name
     integer, intent(out) :: size
     integer :: bmi_status
+    
+    ! note: the combined variables are used assuming ngen is interacting with the
+    !       catchment-averaged result if snowbands are used
 
     select case(name)
     case("precip")
        size = sizeof(this%model%forcing%precip_comb)    ! 'sizeof' in gcc & ifort
        bmi_status = BMI_SUCCESS
     case("tair")
-       size = sizeof(this%model%forcing%tair_comb)      ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%forcing%tair_comb)
        bmi_status = BMI_SUCCESS
     case("precip_scf")
-       size = sizeof(this%model%forcing%precip_scf_comb)     ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%forcing%precip_scf_comb)
        bmi_status = BMI_SUCCESS
     case("sneqv")
-       size = sizeof(this%model%modelvar%sneqv_comb)     ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%modelvar%sneqv_comb)
        bmi_status = BMI_SUCCESS
     case("snowh")
-       size = sizeof(this%model%modelvar%snowh_comb)     ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%modelvar%snowh_comb)
        bmi_status = BMI_SUCCESS
     case("raim")
-       size = sizeof(this%model%modelvar%raim_comb)      ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%modelvar%raim_comb)
        bmi_status = BMI_SUCCESS
     case default
        size = -1
