@@ -66,11 +66,10 @@ program multi_driver
   print*, 'Running model => start: ', start_datehr, ' end: ', end_datehr, ' timesteps: ', int((end_time - current_time)/dt)
   print*,'----'
   
-  ! loop through while current time <= end time (
+  ! loop through timesteps and update model while current time <= end time (
   do while (current_time .le. end_time)
-    !print*, 'Current time:', current_time
     status = m%update()                       ! run the model one time step
-    status = m%get_current_time(current_time) ! update current_time
+    status = m%get_current_time(current_time) ! get updated current_time 
   end do
 
   !---------------------------------------------------------------------

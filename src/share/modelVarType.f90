@@ -14,7 +14,7 @@ module modelVarType
     real, dimension(:), allocatable    :: raim   ! rain and melt output (mm/s)
   
     ! other states and carryover variables
-    real, dimension(:), allocatable    :: tprev
+    real, dimension(:), allocatable    :: tprev  ! stores previous timestep temperature (degC)
     real, dimension(:,:), allocatable  :: cs     ! 19-element vector per HRU used in snow19: (n_hrus, 19)
   
     ! areally-averaged variables for output 
@@ -43,12 +43,14 @@ module modelVarType
     allocate(this%snow  (1:namelist%n_hrus))
     allocate(this%tprev (1:namelist%n_hrus))
     !
-    ! Reversed the row and column for this `cs' array such that
+    !Reversed the row and column for this `cs' array such that
     ! we can pass a slice of the array to other subroutines in
     ! a contiguous memory. Otherwise, we will receive warnings
     ! at runtime about creation of a temporary array. and the performance
     ! is impaired. The reason is that
     ! Fortran stores arrays as 'column major'. 
+    !
+    !allocate(this%cs    (1:namelist%n_hrus, 1:19)) => runtime warnings
     !
     allocate(this%cs    (1:19, 1:namelist%n_hrus))
     
