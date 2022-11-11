@@ -135,6 +135,16 @@ contains
 #endif
 
       !---------------------------------------------------------------------
+      ! initialize basin-average variables
+      !---------------------------------------------------------------------
+      forcing%tair_comb       = 0.0
+      forcing%precip_comb     = 0.0
+      forcing%precip_scf_comb = 0.0
+      modelvar%sneqv_comb     = 0.0
+      modelvar%snowh_comb     = 0.0
+      modelvar%raim_comb      = 0.0
+
+      !---------------------------------------------------------------------
       ! call the main snow17 state update routine in loop over spatial sub-units
       !---------------------------------------------------------------------
       do nh=1, runinfo%n_hrus
@@ -155,6 +165,24 @@ contains
 
         ! convert raim output to a rate (mm/s)
         modelvar%raim(nh) = modelvar%raim(nh) / runinfo%dt
+        
+        ! update basin-averaged variables
+        forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
+        forcing%precip_comb      = forcing%precip_comb + forcing%precip(nh) * parameters%hru_area(nh)
+        forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip_scf(nh) * parameters%hru_area(nh)
+        modelvar%sneqv_comb      = modelvar%sneqv_comb + modelvar%sneqv(nh) * parameters%hru_area(nh) 
+        modelvar%snowh_comb      = modelvar%snowh_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
+        modelvar%raim_comb       = modelvar%raim_comb + modelvar%raim(nh) * parameters%hru_area(nh)
+
+        ! ==== if all snowbands have been run, sum across snowbands with weighting for snowband area ====
+        if (nh .eq. runinfo%n_hrus) then 
+          forcing%tair_comb        = forcing%tair_comb / parameters%total_area
+          forcing%precip_comb      = forcing%precip_comb / parameters%total_area
+          forcing%precip_scf_comb  = forcing%precip_scf_comb / parameters%total_area
+          modelvar%sneqv_comb      = modelvar%sneqv_comb / parameters%total_area
+          modelvar%snowh_comb      = modelvar%snowh_comb / parameters%total_area
+          modelvar%raim_comb       = modelvar%raim_comb / parameters%total_area
+        end if
 
         !---------------------------------------------------------------------
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
