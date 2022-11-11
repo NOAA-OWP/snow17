@@ -98,7 +98,7 @@ module bmi_snow17_module
 
   ! Exchange items
   integer, parameter :: input_item_count = 2
-  integer, parameter :: output_item_count = 4
+  integer, parameter :: output_item_count = 6
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
   character (len=BMI_MAX_VAR_NAME), target, &
@@ -155,10 +155,12 @@ contains
     character (*), pointer, intent(out) :: names(:)
     integer :: bmi_status
 
-    output_items(1) = 'precip_scf'   ! precip after scf scaling (mm)
-    output_items(2) = 'sneqv'        ! snow water equivalent (mm)
-    output_items(3) = 'snowh'        ! snow height (mm)
-    output_items(4) = 'raim'         ! rain plus snowmelt (mm/s)
+    output_items(1) = 'tair'         ! tair (degC)
+    output_items(2) = 'precip'       ! precip (mm/s)
+    output_items(3) = 'precip_scf'   ! precip after scf scaling (mm/s)
+    output_items(4) = 'sneqv'        ! snow water equivalent (mm)
+    output_items(5) = 'snowh'        ! snow height (mm)
+    output_items(6) = 'raim'         ! precipitation (liquid) plus snowmelt (mm/s)
 
     names => output_items
     bmi_status = BMI_SUCCESS
@@ -193,7 +195,7 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    !time = 0.d0                                            ! time relative to start time (s) == 0
+    !time = 0.d0                                           ! time relative to start time (s) == 0
     time = dble(this%model%runinfo%start_datetime)         ! using unix time (s)
     
     bmi_status = BMI_SUCCESS
@@ -206,7 +208,7 @@ contains
     integer :: bmi_status
 
     !time = dble(this%model%runinfo%ntimes * this%model%runinfo%dt)  ! time relative to start time (s)
-    time = dble(this%model%runinfo%end_datetime)                    ! using unix time (s)
+    time = dble(this%model%runinfo%end_datetime)                     ! using unix time (s)
     
     bmi_status = BMI_SUCCESS
   end function snow17_end_time
@@ -217,7 +219,7 @@ contains
     double precision, intent(out) :: time
     integer :: bmi_status
 
-    !time = dble(this%model%runinfo%time_dbl)           ! time from start of run (s)
+    !time = dble(this%model%runinfo%time_dbl)        ! time from start of run (s)
     time = dble(this%model%runinfo%curr_datetime)    ! unix time (s)
     bmi_status = BMI_SUCCESS
   end function snow17_current_time
@@ -255,34 +257,23 @@ contains
   function snow17_update_until(this, time) result (bmi_status)
     class (bmi_snow17), intent(inout) :: this
     double precision, intent(in) :: time
+    ! local variables
     integer :: bmi_status
-    double precision :: n_steps_real
-    integer :: n_steps, i, s
+    double precision :: tmp_time
+    integer :: s
 
-    ! new code to work with unix time convention
     ! check to see if desired time to advance to is earlier than current time (can't go backwards)
     if (time < this%model%runinfo%curr_datetime) then
        bmi_status = BMI_FAILURE
        return
     end if
     ! otherwise try to advance to end time
-    do while ( time < this%model%runinfo%end_datetime )
+    tmp_time = time
+    do while ( tmp_time < this%model%runinfo%end_datetime )
        s = this%update()
+       tmp_time = this%model%runinfo%curr_datetime
     end do
 
-    ! original code working with time run convention from 0 to n*dt end_time
-    !if (time < this%model%runinfo%time_dbl) then
-    !   bmi_status = BMI_FAILURE
-    !   return
-    !end if
-
-    !n_steps_real = (time - this%model%runinfo%time_dbl) / this%model%runinfo%dt
-    !n_steps = floor(n_steps_real)
-    !do i = 1, n_steps
-    !   s = this%update()
-    !end do
-    !     call update_frac(this, n_steps_real - dble(n_steps)) ! NOT IMPLEMENTED
-    
     bmi_status = BMI_SUCCESS
   end function snow17_update_until
 
@@ -294,8 +285,8 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case('tair', 'precip', &     ! input vars
-         'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
+    case('tair', 'precip', &                       ! input/output vars (can pass forc to output)
+         'precip_scf', 'sneqv', 'snowh', 'raim')   ! output vars
        grid = 0
        bmi_status = BMI_SUCCESS
     case default
@@ -565,7 +556,7 @@ contains
     integer :: bmi_status
 
     select case(name)
-    case('tair', 'precip', &     ! input vars
+    case('tair', 'precip', &                            ! input/output vars
          'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
        type = "real"
        bmi_status = BMI_SUCCESS
@@ -584,13 +575,13 @@ contains
 
     select case(name)
     case("precip")
-       units = "mm"
+       units = "mm/s"
        bmi_status = BMI_SUCCESS
     case("tair")
-       units = "C"
+       units = "degC"
        bmi_status = BMI_SUCCESS
     case("precip_scf")
-       units = "mm"
+       units = "mm/s"
        bmi_status = BMI_SUCCESS
     case("sneqv")
        units = "mm"
@@ -599,7 +590,7 @@ contains
        units = "mm"
        bmi_status = BMI_SUCCESS
     case("raim")
-       units = "mm"
+       units = "mm/s"
        bmi_status = BMI_SUCCESS
     case default
        units = "-"
@@ -613,25 +604,28 @@ contains
     character (len=*), intent(in) :: name
     integer, intent(out) :: size
     integer :: bmi_status
+    
+    ! note: the combined variables are used assuming ngen is interacting with the
+    !       catchment-averaged result if snowbands are used
 
     select case(name)
     case("precip")
-       size = sizeof(this%model%forcing%precip_comb)    ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%forcing%precip(1))    ! 'sizeof' in gcc & ifort
        bmi_status = BMI_SUCCESS
     case("tair")
-       size = sizeof(this%model%forcing%tair_comb)      ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%forcing%tair(1))
        bmi_status = BMI_SUCCESS
     case("precip_scf")
-       size = sizeof(this%model%forcing%precip_scf_comb)     ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%forcing%precip_scf_comb)
        bmi_status = BMI_SUCCESS
     case("sneqv")
-       size = sizeof(this%model%modelvar%sneqv_comb)     ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%modelvar%sneqv_comb)
        bmi_status = BMI_SUCCESS
     case("snowh")
-       size = sizeof(this%model%modelvar%snowh_comb)     ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%modelvar%snowh_comb)
        bmi_status = BMI_SUCCESS
     case("raim")
-       size = sizeof(this%model%modelvar%raim_comb)      ! 'sizeof' in gcc & ifort
+       size = sizeof(this%model%modelvar%raim_comb)
        bmi_status = BMI_SUCCESS
     case default
        size = -1
@@ -701,10 +695,10 @@ contains
 
     select case(name)
     case("precip")
-       dest(1) = this%model%forcing%precip_comb
+       dest(1) = this%model%forcing%precip(1)
        bmi_status = BMI_SUCCESS
     case("tair")
-       dest(1) = this%model%forcing%tair_comb
+       dest(1) = this%model%forcing%tair(1)
        bmi_status = BMI_SUCCESS
     case("precip_scf")
        dest(1) = this%model%forcing%precip_scf_comb
@@ -872,24 +866,27 @@ contains
     real, intent(in) :: src(:)
     integer :: bmi_status
 
+    ! NOTE: if run in a vector (snowband mode), this code will need revising
+    !       to set the basin average (ie, restart capability)
+
     select case(name)
     case("precip")
-       this%model%forcing%precip_comb = src(1)
+       this%model%forcing%precip(1) = src(1)
        bmi_status = BMI_SUCCESS
     case("tair")
-       this%model%forcing%tair_comb = src(1)
+       this%model%forcing%tair(1) = src(1)
        bmi_status = BMI_SUCCESS
     case("precip_scf")
-       this%model%forcing%precip_scf_comb = src(1)
+       this%model%forcing%precip_scf(1) = src(1)
        bmi_status = BMI_SUCCESS
     case("sneqv")
-       this%model%modelvar%sneqv_comb = src(1)
+       this%model%modelvar%sneqv(1) = src(1)
        bmi_status = BMI_SUCCESS
     case("snowh")
-       this%model%modelvar%snowh_comb = src(1)
+       this%model%modelvar%snowh(1) = src(1)
        bmi_status = BMI_SUCCESS
     case("raim")
-       this%model%modelvar%raim_comb = src(1)
+       this%model%modelvar%raim(1) = src(1)
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE

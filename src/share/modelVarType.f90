@@ -8,13 +8,13 @@ module modelVarType
   type, public :: modelvar_type
 
     ! main model states and flux variable
-    real, dimension(:), allocatable    :: sneqv  ! snow water equivalent (unit)
-    real, dimension(:), allocatable    :: snowh  ! snow height
-    real, dimension(:), allocatable    :: snow   ! snow (?) -- seems same as snowh but used in snow19()
-    real, dimension(:), allocatable    :: raim   ! rain and melt output
+    real, dimension(:), allocatable    :: sneqv  ! snow water equivalent (mm)
+    real, dimension(:), allocatable    :: snowh  ! snow height (mm)
+    real, dimension(:), allocatable    :: snow   ! snow (?) -- seems same as snowh but used in snow19() (mm)
+    real, dimension(:), allocatable    :: raim   ! rain and melt output (mm/s)
   
     ! other states and carryover variables
-    real, dimension(:), allocatable    :: tprev
+    real, dimension(:), allocatable    :: tprev  ! stores previous timestep temperature (degC)
     real, dimension(:,:), allocatable  :: cs     ! 19-element vector per HRU used in snow19: (n_hrus, 19)
   
     ! areally-averaged variables for output 

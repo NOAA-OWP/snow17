@@ -92,7 +92,6 @@ contains
   END SUBROUTINE initialize_from_file                
               
              
-             
   ! == Move the model ahead one time step ================================================================
   SUBROUTINE advance_in_time(model)
     type (snow17_type), intent (inout) :: model
@@ -119,6 +118,7 @@ contains
     
     ! local parameters
     integer            :: nh             ! counter for snowbands
+    real               :: prcp_mm        ! precip as a depth (for input to snow17) (mm)
 
     associate(namelist   => model%namelist,   &
               runinfo    => model%runinfo,    &
@@ -135,13 +135,25 @@ contains
 #endif
 
       !---------------------------------------------------------------------
+      ! initialize basin-average variables
+      !---------------------------------------------------------------------
+      forcing%tair_comb       = 0.0
+      forcing%precip_comb     = 0.0
+      forcing%precip_scf_comb = 0.0
+      modelvar%sneqv_comb     = 0.0
+      modelvar%snowh_comb     = 0.0
+      modelvar%raim_comb      = 0.0
+
+      !---------------------------------------------------------------------
       ! call the main snow17 state update routine in loop over spatial sub-units
       !---------------------------------------------------------------------
       do nh=1, runinfo%n_hrus
 
+        prcp_mm = forcing%precip(nh)*runinfo%dt   ! convert prcp input to a depth per timestep (mm)
+
         call exsnow19(int(runinfo%dt), int(runinfo%dt/3600), runinfo%curr_dy, runinfo%curr_mo, runinfo%curr_yr, &
     	  ! SNOW17 INPUT AND OUTPUT VARIABLES
-  	      forcing%precip(nh), forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
+          prcp_mm, forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
     	  ! SNOW17 PARAMETERS
           !ALAT,SCF,MFMAX,MFMIN,UADJ,SI,NMF,TIPM,MBASE,PXTEMP,PLWHC,DAYGM,ELEV,PA,ADC
   	      parameters%latitude(nh), parameters%scf(nh), parameters%mfmax(nh), parameters%mfmin(nh), &
@@ -149,7 +161,28 @@ contains
           parameters%pxtemp(nh), parameters%plwhc(nh), parameters%daygm(nh), parameters%elev(nh), forcing%pa(nh), &
           parameters%adc(:,nh), &
           ! SNOW17 CARRYOVER VARIABLES
-  		  modelvar%cs(:,nh), modelvar%tprev(nh) )             
+  		  modelvar%cs(:,nh), modelvar%tprev(nh) )
+
+        ! convert raim output to a rate (mm/s)
+        modelvar%raim(nh) = modelvar%raim(nh) / runinfo%dt
+        
+        ! update basin-averaged variables
+        forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
+        forcing%precip_comb      = forcing%precip_comb + forcing%precip(nh) * parameters%hru_area(nh)
+        forcing%precip_scf_comb  = forcing%precip_scf_comb + forcing%precip_scf(nh) * parameters%hru_area(nh)
+        modelvar%sneqv_comb      = modelvar%sneqv_comb + modelvar%sneqv(nh) * parameters%hru_area(nh) 
+        modelvar%snowh_comb      = modelvar%snowh_comb + modelvar%snowh(nh) * parameters%hru_area(nh) 
+        modelvar%raim_comb       = modelvar%raim_comb + modelvar%raim(nh) * parameters%hru_area(nh)
+
+        ! ==== if all snowbands have been run, sum across snowbands with weighting for snowband area ====
+        if (nh .eq. runinfo%n_hrus) then 
+          forcing%tair_comb        = forcing%tair_comb / parameters%total_area
+          forcing%precip_comb      = forcing%precip_comb / parameters%total_area
+          forcing%precip_scf_comb  = forcing%precip_scf_comb / parameters%total_area
+          modelvar%sneqv_comb      = modelvar%sneqv_comb / parameters%total_area
+          modelvar%snowh_comb      = modelvar%snowh_comb / parameters%total_area
+          modelvar%raim_comb       = modelvar%raim_comb / parameters%total_area
+        end if
 
         !---------------------------------------------------------------------
         ! add results to output file if NGEN_OUTPUT_ACTIVE is undefined
