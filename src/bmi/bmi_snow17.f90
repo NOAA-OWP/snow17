@@ -98,7 +98,7 @@ module bmi_snow17_module
 
   ! Exchange items
   integer, parameter :: input_item_count = 2
-  integer, parameter :: output_item_count = 6
+  integer, parameter :: output_item_count = 4
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
   character (len=BMI_MAX_VAR_NAME), target, &
@@ -155,12 +155,10 @@ contains
     character (*), pointer, intent(out) :: names(:)
     integer :: bmi_status
 
-    output_items(1) = 'tair'         ! tair (degC)
-    output_items(2) = 'precip'       ! precip (mm/s)
-    output_items(3) = 'precip_scf'   ! precip after scf scaling (mm/s)
-    output_items(4) = 'sneqv'        ! snow water equivalent (mm)
-    output_items(5) = 'snowh'        ! snow height (mm)
-    output_items(6) = 'raim'         ! precipitation (liquid) plus snowmelt (mm/s)
+    output_items(1) = 'precip_scf'   ! precip after scf scaling (mm/s)
+    output_items(2) = 'sneqv'        ! snow water equivalent (mm)
+    output_items(3) = 'snowh'        ! snow height (mm)
+    output_items(4) = 'raim'         ! precipitation (liquid) plus snowmelt (mm/s)
 
     names => output_items
     bmi_status = BMI_SUCCESS
