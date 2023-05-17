@@ -115,3 +115,6 @@ ex1/
 
 # local Makefile versions
 *.local
+
+# CMake Build Dir (ngen)
+cmake_build/
