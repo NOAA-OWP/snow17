@@ -18,9 +18,9 @@ There are no current dependencies except for a Fortran-compatible compiler (e.g.
 
 To build and run Snow-17 with example data, check out the [INSTALL](INSTALL.md) document.
 
-## Configuration
+## Snow17 & NextGen
 
-TBA:  If the software is configurable, describe it in detail, either here or in other documentation to which you link.
+See [NGEN_EXAMPLE](NGEN_EXAMPLE.md) for guidance on building and running Snow17 in a model coupling framework.
 
 ## How to test the software
 
