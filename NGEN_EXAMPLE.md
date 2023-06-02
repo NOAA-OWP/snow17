@@ -24,7 +24,7 @@ Then, clone, update and build the following modules,
     ```
   - #### Snow17
     ```
-    git clone https://github.com/NOAA-OWP/snow17.git ./extern
+    git clone https://github.com/NOAA-OWP/snow17.git ./extern/snow17
     cmake -B extern/snow17/cmake_build -S extern/snow17
     cmake --build extern/snow17/cmake_build --target all
     ``` 
@@ -52,7 +52,7 @@ Then, clone, update and build the following modules,
  ### Run 
 Pre-process step for configuration and data pathing
  ```
-  tar -xzvf extern/snow17/test_cases/ex1.tgz extern/snow17/test_cases/
+  tar -xzvf extern/snow17/test_cases/ex1.tgz -C extern/snow17/test_cases/
   cp extern/snow17/configs/example_bmi_multi_realization_config_w_snow17.json data/
   cp extern/snow17/configs/snow17-init-cat-27.namelist.input data/bmi/fortran/
   ```
