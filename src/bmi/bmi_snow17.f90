@@ -710,6 +710,54 @@ contains
     case("raim")
        dest(1) = this%model%modelvar%raim_comb
        bmi_status = BMI_SUCCESS
+    case("scf")
+       dest = [this%model%parameters%scf]
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       dest = [this%model%parameters%mfmax]
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       dest = [this%model%parameters%mfmin]
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       dest = [this%model%parameters%uadj]
+       bmi_status = BMI_SUCCESS
+    case("si")
+       dest = [this%model%parameters%si]
+       bmi_status = BMI_SUCCESS
+    case("pxtemp")
+       dest = [this%model%parameters%pxtemp]
+       bmi_status = BMI_SUCCESS
+    case("nmf")
+       dest = [this%model%parameters%nmf]
+       bmi_status = BMI_SUCCESS
+    case("tipm")
+       dest = [this%model%parameters%tipm]
+       bmi_status = BMI_SUCCESS
+    case("mbase")
+       dest = [this%model%parameters%mbase]
+       bmi_status = BMI_SUCCESS
+    case("plwhc")
+       dest = [this%model%parameters%plwhc]
+       bmi_status = BMI_SUCCESS
+    case("daygm")
+       dest = [this%model%parameters%daygm]
+       bmi_status = BMI_SUCCESS
+    case("adc")
+       dest = [[this%model%parameters%adc]]
+       bmi_status = BMI_SUCCESS
+    case("elev")
+       dest = [this%model%parameters%elev]
+       bmi_status = BMI_SUCCESS
+    case("latitude")
+       dest = [this%model%parameters%latitude]
+       bmi_status = BMI_SUCCESS
+    case("hru_area")
+       dest = [this%model%parameters%hru_area]
+       bmi_status = BMI_SUCCESS
+    case("total_area")
+       dest = this%model%parameters%total_area(1)
+       bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.0
        bmi_status = BMI_FAILURE
