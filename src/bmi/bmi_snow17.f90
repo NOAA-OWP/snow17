@@ -886,6 +886,54 @@ contains
     case("raim")
        this%model%modelvar%raim(1) = src(1)
        bmi_status = BMI_SUCCESS
+    case("scf")
+       this%model%parameters%scf(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       this%model%parameters%mfmax(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       this%model%parameters%mfmin(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       this%model%parameters%uadj(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("si")
+       this%model%parameters%si(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("pxtemp")
+       this%model%parameters%pxtemp(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("nmf")
+       this%model%parameters%nmf(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("tipm")
+       this%model%parameters%tipm(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mbase")
+       this%model%parameters%mbase(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("plwhc")
+       this%model%parameters%plwhc(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("daygm")
+       this%model%parameters%daygm(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc")
+       this%model%parameters%adc(:,:) = src(:,:)
+       bmi_status = BMI_SUCCESS
+    case("elev")
+       this%model%parameters%elev(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("latitude")
+       this%model%parameters%latitude(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("hru_area")
+       this%model%parameters%hru_area(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("total_area")
+       this%model%parameters%total_area = src(1)
+       bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
     end select
