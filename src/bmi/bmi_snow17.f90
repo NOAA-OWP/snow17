@@ -558,6 +558,16 @@ contains
          'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
        type = "real"
        bmi_status = BMI_SUCCESS
+    case('scf', 'mfmax', 'mfmin', 'uadj', 'si', &       ! parameters
+         'pxtemp', 'nmf', 'tipm', 'mbase', 'plwhc', &
+         'daygm', 'adh','elev', 'latitude', &
+         'hru_area', 'total_area')
+       type = "real"
+       bmi_status = BMI_SUCCESS
+
+    case('hru_id')
+       type = "character"
+       bmi_status = BMI_SUCCESS
     case default
        type = "-"
        bmi_status = BMI_FAILURE
@@ -589,6 +599,15 @@ contains
        bmi_status = BMI_SUCCESS
     case("raim")
        units = "mm/s"
+       bmi_status = BMI_SUCCESS
+    case("elev")
+       units = "mm/s"
+       bmi_status = BMI_SUCCESS
+    case("hru_area", "total_area")
+       units = "km**2"
+       bmi_status = BMI_SUCCESS
+    case("scf", "mfmax", "mfmin", "uadj", "si", "pxtemp", "nmf", "tipm", "mbase", "plwhc", "daygm", "adc")
+       units = "unitless"
        bmi_status = BMI_SUCCESS
     case default
        units = "-"
