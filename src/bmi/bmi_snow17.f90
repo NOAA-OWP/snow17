@@ -644,6 +644,48 @@ contains
     case("raim")
        size = sizeof(this%model%modelvar%raim_comb)
        bmi_status = BMI_SUCCESS
+    case("scf")
+       size = sizeof(this%model%parameters%scf(1))
+       bmi_status = BMI_SUCCESS
+    case("scf")
+       size = sizeof(this%model%parameters%scf(1))
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       size = sizeof(this%model%parameters%mfmax(1))
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       size = sizeof(this%model%parameters%mfmin(1))
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       size = sizeof(this%model%parameters%uadj(1))
+       bmi_status = BMI_SUCCESS
+    case("si")
+       size = sizeof(this%model%parameters%scf(si))
+       bmi_status = BMI_SUCCESS
+    case("pxtemp")
+       size = sizeof(this%model%parameters%pxtemp(1))
+       bmi_status = BMI_SUCCESS
+    case("nmf")
+       size = sizeof(this%model%parameters%nmf(1))
+       bmi_status = BMI_SUCCESS
+    case("tipm")
+       size = sizeof(this%model%parameters%tipm(1))
+       bmi_status = BMI_SUCCESS
+    case("mbase")
+       size = sizeof(this%model%parameters%mbase(1))
+       bmi_status = BMI_SUCCESS
+    case("plwhc")
+       size = sizeof(this%model%parameters%plwhc(1))
+       bmi_status = BMI_SUCCESS
+    case("daygm")
+       size = sizeof(this%model%parameters%daygm(1))
+       bmi_status = BMI_SUCCESS
+    case("total_area")
+       size = sizeof(this%model%parameters%total_area)
+       bmi_status = BMI_SUCCESS
+    case("adc")
+       size = sizeof(this%model%parameters%adc(1, 1))
+       bmi_status = BMI_SUCCESS
     case default
        size = -1
        bmi_status = BMI_FAILURE
