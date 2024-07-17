@@ -606,10 +606,7 @@ contains
     case("hru_area", "total_area")
        units = "km**2"
        bmi_status = BMI_SUCCESS
-    case("scf", "mfmax", "mfmin", "uadj", "si", "pxtemp", "nmf", "tipm", "mbase", "plwhc", "daygm")
-       units = "unitless"
-       bmi_status = BMI_SUCCESS
-    case("adc1", "adc2", "adc3", "adc4", "adc5", "adc6", "adc7", "adc8", "adc9", "adc10", "adc11")
+    case("adc", "scf", "mfmax", "mfmin", "uadj", "si", "pxtemp", "nmf", "tipm", "mbase", "plwhc", "daygm")
        units = "unitless"
        bmi_status = BMI_SUCCESS
     case default
@@ -650,9 +647,6 @@ contains
     case("scf")
        size = sizeof(this%model%parameters%scf(1))
        bmi_status = BMI_SUCCESS
-    case("scf")
-       size = sizeof(this%model%parameters%scf(1))
-       bmi_status = BMI_SUCCESS
     case("mfmax")
        size = sizeof(this%model%parameters%mfmax(1))
        bmi_status = BMI_SUCCESS
@@ -663,7 +657,7 @@ contains
        size = sizeof(this%model%parameters%uadj(1))
        bmi_status = BMI_SUCCESS
     case("si")
-       size = sizeof(this%model%parameters%scf(si))
+       size = sizeof(this%model%parameters%si(1))
        bmi_status = BMI_SUCCESS
     case("pxtemp")
        size = sizeof(this%model%parameters%pxtemp(1))
@@ -687,37 +681,37 @@ contains
        size = sizeof(this%model%parameters%total_area)
        bmi_status = BMI_SUCCESS
     case("adc1")
-       size = sizeof(this%model%parameters%adc1(1))
+       size = sizeof(this%model%parameters%adc(1,:))
        bmi_status = BMI_SUCCESS
     case("adc2")
-       size = sizeof(this%model%parameters%adc2(1))
+       size = sizeof(this%model%parameters%adc(2,:))
        bmi_status = BMI_SUCCESS
     case("adc3")
-       size = sizeof(this%model%parameters%adc3(1))
+       size = sizeof(this%model%parameters%adc(3,:))
        bmi_status = BMI_SUCCESS
     case("adc4")
-       size = sizeof(this%model%parameters%adc4(1))
+       size = sizeof(this%model%parameters%adc(4,:))
        bmi_status = BMI_SUCCESS
     case("adc5")
-       size = sizeof(this%model%parameters%adc5(1))
+       size = sizeof(this%model%parameters%adc(5,:))
        bmi_status = BMI_SUCCESS
     case("adc6")
-       size = sizeof(this%model%parameters%adc6(1))
+       size = sizeof(this%model%parameters%adc(6,:))
        bmi_status = BMI_SUCCESS
     case("adc7")
-       size = sizeof(this%model%parameters%adc7(1))
+       size = sizeof(this%model%parameters%adc(7,:))
        bmi_status = BMI_SUCCESS
     case("adc8")
-       size = sizeof(this%model%parameters%adc8(1))
+       size = sizeof(this%model%parameters%adc(8,:))
        bmi_status = BMI_SUCCESS
     case("adc9")
-       size = sizeof(this%model%parameters%adc9(1))
+       size = sizeof(this%model%parameters%adc(9,:))
        bmi_status = BMI_SUCCESS
     case("adc10")
-       size = sizeof(this%model%parameters%adc10(1))
+       size = sizeof(this%model%parameters%adc(10,:))
        bmi_status = BMI_SUCCESS
     case("adc11")
-       size = sizeof(this%model%parameters%adc11(1))
+       size = sizeof(this%model%parameters%adc(11,:))
        bmi_status = BMI_SUCCESS
     case default
        size = -1
@@ -838,7 +832,7 @@ contains
        dest = [this%model%parameters%daygm]
        bmi_status = BMI_SUCCESS
     case("adc")
-       dest = [[this%model%parameters%adc]]
+       dest = [this%model%parameters%adc]
        bmi_status = BMI_SUCCESS
     case("elev")
        dest = [this%model%parameters%elev]
@@ -850,7 +844,7 @@ contains
        dest = [this%model%parameters%hru_area]
        bmi_status = BMI_SUCCESS
     case("total_area")
-       dest = this%model%parameters%total_area(1)
+       dest(1) = this%model%parameters%total_area
        bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.0
@@ -1062,37 +1056,37 @@ contains
        this%model%parameters%daygm(:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc1")
-       this%model%parameters%adc1(:) = src(:)
+       this%model%parameters%adc(1,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc2")
-       this%model%parameters%adc2(:) = src(:)
+       this%model%parameters%adc(2,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc3")
-       this%model%parameters%adc3(:) = src(:)
+       this%model%parameters%adc(3,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc4")
-       this%model%parameters%adc4(:) = src(:)
+       this%model%parameters%adc(4,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc5")
-       this%model%parameters%adc5(:) = src(:)
+       this%model%parameters%adc(5,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc6")
-       this%model%parameters%adc6(:) = src(:)
+       this%model%parameters%adc(6,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc7")
-       this%model%parameters%adc7(:) = src(:)
+       this%model%parameters%adc(7,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc8")
-       this%model%parameters%adc8(:) = src(:)
+       this%model%parameters%adc(8,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc9")
-       this%model%parameters%adc9(:) = src(:)
+       this%model%parameters%adc(9,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc10")
-       this%model%parameters%adc10(:) = src(:)
+       this%model%parameters%adc(10,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("adc11")
-       this%model%parameters%adc11(:) = src(:)
+       this%model%parameters%adc(11,:) = src(:)
        bmi_status = BMI_SUCCESS
     case("elev")
        this%model%parameters%elev(:) = src(:)
