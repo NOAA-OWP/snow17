@@ -216,7 +216,7 @@ program snow17_driver_test
         if(allocated(var_value_set_real)) deallocate(var_value_set_real)
         allocate(var_value_get_real(grid_size))
         allocate(var_value_set_real(grid_size))
-        var_value_set_real = 999
+        var_value_set_real = 999.0
         status = m%get_value(trim(name), var_value_get_real)
         print*, trim(name), " from get_value = ", var_value_get_real
         !select case (trim(name))
