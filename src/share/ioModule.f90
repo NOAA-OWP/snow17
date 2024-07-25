@@ -172,6 +172,7 @@ contains
 
     ! --- code ------------------------------------------------------------------
     print*, 'Initializing forcing files'
+    ios = 0
     found_start = 0
     do nh=1, runinfo%n_hrus
 

@@ -33,7 +33,7 @@ module modelVarType
     implicit none
 
     ! define variables
-    class(modelvar_type), intent(out) :: this
+    class(modelvar_type), intent(inout) :: this
     type(namelist_type), intent(in)   :: namelist
     
     ! -- variable allocations (time dim not needed since forcings are one-rec scalars)
