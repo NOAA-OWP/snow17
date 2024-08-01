@@ -24,10 +24,11 @@ contains
     ! local variables
     character(len=400)      :: readline
     character(len=50)		:: param
-    integer    	            :: ios=0   ! specify i4b with nrtype?
+    integer    	            :: ios
     integer                 :: pos
     integer                 :: n_params_read, nh  ! counters
   
+    ios = 0
     ! open parameter file
     open(unit=51,file=trim(param_file_name),status='old')
   
@@ -163,7 +164,7 @@ contains
     ! local variables
     character*480  :: filename
     logical        :: lexist ! logical for whether the file specified by filename exists
-    integer        :: ierr=0   ! error code returned by open(iostat = ierr)
+    integer        :: ierr   ! error code returned by open(iostat = ierr)
     integer        :: nh     ! loop counter
     
     ! local variables
@@ -174,6 +175,7 @@ contains
     print*, 'Initializing forcing files'
     ios = 0
     found_start = 0
+    ierr = 0
     do nh=1, runinfo%n_hrus
 
       ! make filename to read
@@ -260,12 +262,13 @@ contains
     type (forcing_type),     intent(inout)   :: forcing
   
     ! local variables
-    integer				                     :: nh, ierr=0
+    integer				                     :: nh, ierr
     integer				                     :: yr, mnth, dy, hr
     character(len=10)                        :: forcing_datehr
     
     !print*, "---"; print*, 'Current run datehr is ', runinfo%curr_datehr
   
+    ierr = 0
     ! loop over sub-areas and read their forcings
     do nh=1, runinfo%n_hrus
 
@@ -429,7 +432,7 @@ contains
    
     ! local variables
     integer               :: hru
-    integer	              :: ios = 0
+    integer	          :: ios
     character(len=480)    :: state_filename
     character(len=10)     :: statefile_datehr
     character(len=10)	  :: state_datehr         ! string to match date in input states
@@ -437,6 +440,7 @@ contains
     integer               :: states_found         ! counter to match hrus
     
     ! ---- code -----
+    ios = 0
     print*, 'Reading restart files'
     
     ! starting statefiles match format of statefile outputs (date then variables)
