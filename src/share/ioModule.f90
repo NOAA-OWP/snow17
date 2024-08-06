@@ -284,15 +284,6 @@ contains
         print*, 'ERROR: forcing datehr: ',forcing_datehr, ' does not match curr_datehr of run :', runinfo%curr_datehr
         STOP
       end if 
-
-      ! update other forcing fields (derived)
-      ! NOTE: this is written now for a single temperature input (tair), but the standard for running snow17+sac is tmin/tmax
-      !       we could return to the standard though a namelist option if needed
-      forcing%precip_scf(nh) = forcing%precip(nh) * parameters%scf(nh)   ! scale input precip by snow correction factor
-                                                                         ! (note: this is for output; model input 
-                                                                         ! precip is scaled in pack19()
-
-      call sfc_pressure(parameters%elev(nh), forcing%pa(nh))             ! fill in the surface pressure field                   
                                                         
     end do  ! end loop across snowbands (hrus)
     
@@ -383,7 +374,7 @@ contains
       
         ! Write 1-line header
         write(runinfo%state_fileunits(nh),'(A)') &
-         'datehr tprev cs1 cs2 cs3 cs4 cs5 cs6 cs7 cs8cs9 cs10 cs11 cs12 cs13 cs14 cs15 cs16 cs17 cs18 cs19'
+         'datehr tprev cs1 cs2 cs3 cs4 cs5 cs6 cs7 cs8 cs9 cs10 cs11 cs12 cs13 cs14 cs15 cs16 cs17 cs18 cs19'
   
       end do  ! end loop over sub-units
     end if   
