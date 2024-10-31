@@ -287,6 +287,16 @@ contains
          'precip_scf', 'sneqv', 'snowh', 'raim')   ! output vars
        grid = 0
        bmi_status = BMI_SUCCESS
+    case('scf', 'mfmax', 'mfmin', 'uadj', 'si', &       ! parameters
+         'pxtemp', 'nmf', 'tipm', 'mbase', 'plwhc', &
+         'daygm', 'adc','elev', 'latitude', &
+         'hru_area', 'hru_id', 'total_area')
+       grid = 0
+       bmi_status = BMI_SUCCESS
+    case('adc1', 'adc2', 'adc3', 'adc4', 'adc5', &       ! parameters
+         'adc6', 'adc7', 'adc8', 'adc9', 'adc10', 'adc11')
+       grid = 0
+       bmi_status = BMI_SUCCESS
     case default
        grid = -1
        bmi_status = BMI_FAILURE
@@ -558,6 +568,19 @@ contains
          'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
        type = "real"
        bmi_status = BMI_SUCCESS
+    case('scf', 'mfmax', 'mfmin', 'uadj', 'si', &       ! parameters
+         'pxtemp', 'nmf', 'tipm', 'mbase', 'plwhc', &
+         'daygm', 'adc','elev', 'latitude', &
+         'hru_area', 'total_area')
+       type = "real"
+       bmi_status = BMI_SUCCESS
+    case('adc1', 'adc2', 'adc3', 'adc4', 'adc5', &       ! parameters
+         'adc6', 'adc7', 'adc8', 'adc9', 'adc10', 'adc11')
+       type = "real"
+       bmi_status = BMI_SUCCESS
+    case('hru_id')
+       type = "character"
+       bmi_status = BMI_SUCCESS
     case default
        type = "-"
        bmi_status = BMI_FAILURE
@@ -590,6 +613,18 @@ contains
     case("raim")
        units = "mm/s"
        bmi_status = BMI_SUCCESS
+    case("elev")
+       units = "mm/s"
+       bmi_status = BMI_SUCCESS
+    case("hru_area", "total_area")
+       units = "km**2"
+       bmi_status = BMI_SUCCESS
+    case("adc", "scf", "mfmax", "mfmin", "uadj", "si", "pxtemp", "nmf", "tipm", "mbase", "plwhc", "daygm")
+       units = "unitless"
+       bmi_status = BMI_SUCCESS
+    case('adc1', 'adc2', 'adc3', 'adc4', 'adc5', 'adc6', 'adc7', 'adc8', 'adc9', 'adc10', 'adc11')
+        units = "unitless"
+        bmi_status = BMI_SUCCESS
     case default
        units = "-"
        bmi_status = BMI_FAILURE
@@ -606,7 +641,9 @@ contains
     ! note: the combined variables are used assuming ngen is interacting with the
     !       catchment-averaged result if snowbands are used
 
+
     select case(name)
+
     case("precip")
        size = sizeof(this%model%forcing%precip(1))    ! 'sizeof' in gcc & ifort
        bmi_status = BMI_SUCCESS
@@ -625,6 +662,87 @@ contains
     case("raim")
        size = sizeof(this%model%modelvar%raim_comb)
        bmi_status = BMI_SUCCESS
+    case("hru_id")
+       size = sizeof(this%model%parameters%hru_id)
+       bmi_status = BMI_SUCCESS
+    case("hru_area")
+       size = sizeof(this%model%parameters%hru_area(1))
+       bmi_status = BMI_SUCCESS
+    case("latitude")
+       size = sizeof(this%model%parameters%latitude(1))
+       bmi_status = BMI_SUCCESS
+    case("elev")
+       size = sizeof(this%model%parameters%elev(1))
+       bmi_status = BMI_SUCCESS
+    case("scf")
+       size = sizeof(this%model%parameters%scf(1))
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       size = sizeof(this%model%parameters%mfmax(1))
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       size = sizeof(this%model%parameters%mfmin(1))
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       size = sizeof(this%model%parameters%uadj(1))
+       bmi_status = BMI_SUCCESS
+    case("si")
+       size = sizeof(this%model%parameters%si(1))
+       bmi_status = BMI_SUCCESS
+    case("pxtemp")
+       size = sizeof(this%model%parameters%pxtemp(1))
+       bmi_status = BMI_SUCCESS
+    case("nmf")
+       size = sizeof(this%model%parameters%nmf(1))
+       bmi_status = BMI_SUCCESS
+    case("tipm")
+       size = sizeof(this%model%parameters%tipm(1))
+       bmi_status = BMI_SUCCESS
+    case("mbase")
+       size = sizeof(this%model%parameters%mbase(1))
+       bmi_status = BMI_SUCCESS
+    case("plwhc")
+       size = sizeof(this%model%parameters%plwhc(1))
+       bmi_status = BMI_SUCCESS
+    case("daygm")
+       size = sizeof(this%model%parameters%daygm(1))
+       bmi_status = BMI_SUCCESS
+    case("total_area")
+       size = sizeof(this%model%parameters%total_area)
+       bmi_status = BMI_SUCCESS
+    case("adc1")
+       size = sizeof(this%model%parameters%adc(1,:))
+       bmi_status = BMI_SUCCESS
+    case("adc2")
+       size = sizeof(this%model%parameters%adc(2,:))
+       bmi_status = BMI_SUCCESS
+    case("adc3")
+       size = sizeof(this%model%parameters%adc(3,:))
+       bmi_status = BMI_SUCCESS
+    case("adc4")
+       size = sizeof(this%model%parameters%adc(4,:))
+       bmi_status = BMI_SUCCESS
+    case("adc5")
+       size = sizeof(this%model%parameters%adc(5,:))
+       bmi_status = BMI_SUCCESS
+    case("adc6")
+       size = sizeof(this%model%parameters%adc(6,:))
+       bmi_status = BMI_SUCCESS
+    case("adc7")
+       size = sizeof(this%model%parameters%adc(7,:))
+       bmi_status = BMI_SUCCESS
+    case("adc8")
+       size = sizeof(this%model%parameters%adc(8,:))
+       bmi_status = BMI_SUCCESS
+    case("adc9")
+       size = sizeof(this%model%parameters%adc(9,:))
+       bmi_status = BMI_SUCCESS
+    case("adc10")
+       size = sizeof(this%model%parameters%adc(10,:))
+       bmi_status = BMI_SUCCESS
+    case("adc11")
+       size = sizeof(this%model%parameters%adc(11,:))
+       bmi_status = BMI_SUCCESS
     case default
        size = -1
        bmi_status = BMI_FAILURE
@@ -638,7 +756,6 @@ contains
     integer, intent(out) :: nbytes
     integer :: bmi_status
     integer :: s1, s2, s3, grid, grid_size, item_size
-
     s1 = this%get_var_grid(name, grid)
     s2 = this%get_grid_size(grid, grid_size)
     s3 = this%get_var_itemsize(name, item_size)
@@ -709,6 +826,87 @@ contains
        bmi_status = BMI_SUCCESS
     case("raim")
        dest(1) = this%model%modelvar%raim_comb
+       bmi_status = BMI_SUCCESS
+    !case("hru_id")
+    !   dest = [this%model%parameters%hru_id]
+    !   bmi_status = BMI_SUCCESS
+    case("hru_area")
+       dest = [this%model%parameters%hru_area]
+       bmi_status = BMI_SUCCESS
+    case("latitude")
+       dest = [this%model%parameters%latitude]
+       bmi_status = BMI_SUCCESS
+    case("elev")
+       dest = [this%model%parameters%elev]
+       bmi_status = BMI_SUCCESS
+    case("scf")
+       dest = [this%model%parameters%scf]
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       dest = [this%model%parameters%mfmax]
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       dest = [this%model%parameters%mfmin]
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       dest = [this%model%parameters%uadj]
+       bmi_status = BMI_SUCCESS
+    case("si")
+       dest = [this%model%parameters%si]
+       bmi_status = BMI_SUCCESS
+    case("pxtemp")
+       dest = [this%model%parameters%pxtemp]
+       bmi_status = BMI_SUCCESS
+    case("nmf")
+       dest = [this%model%parameters%nmf]
+       bmi_status = BMI_SUCCESS
+    case("tipm")
+       dest = [this%model%parameters%tipm]
+       bmi_status = BMI_SUCCESS
+    case("mbase")
+       dest = [this%model%parameters%mbase]
+       bmi_status = BMI_SUCCESS
+    case("plwhc")
+       dest = [this%model%parameters%plwhc]
+       bmi_status = BMI_SUCCESS
+    case("daygm")
+       dest = [this%model%parameters%daygm]
+       bmi_status = BMI_SUCCESS
+    case("adc")
+       dest = [this%model%parameters%adc]
+       bmi_status = BMI_SUCCESS
+    !case("adc2")
+    !   dest = [this%model%parameters%adc2]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc3")
+    !   dest = [this%model%parameters%adc3]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc4")
+    !   dest = [this%model%parameters%adc4]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc5")
+    !   dest = [this%model%parameters%adc5]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc6")
+    !   dest = [this%model%parameters%adc6]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc7")
+    !   dest = [this%model%parameters%adc7]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc8")
+    !   dest = [this%model%parameters%adc8]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc9")
+    !   dest = [this%model%parameters%adc9]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc10")
+    !   dest = [this%model%parameters%adc10]
+    !   bmi_status = BMI_SUCCESS
+    !case("adc11")
+    !   dest = [this%model%parameters%adc11]
+    !   bmi_status = BMI_SUCCESS
+    case("total_area")
+       dest(1) = this%model%parameters%total_area
        bmi_status = BMI_SUCCESS
     case default
        dest(:) = -1.0
@@ -885,6 +1083,87 @@ contains
        bmi_status = BMI_SUCCESS
     case("raim")
        this%model%modelvar%raim(1) = src(1)
+       bmi_status = BMI_SUCCESS
+    !case("hru_id")
+    !   this%model%parameters%hru_id = src(1)
+    !   bmi_status = BMI_SUCCESS   
+    case("scf")
+       this%model%parameters%scf(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       this%model%parameters%mfmax(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       this%model%parameters%mfmin(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       this%model%parameters%uadj(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("si")
+       this%model%parameters%si(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("pxtemp")
+       this%model%parameters%pxtemp(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("nmf")
+       this%model%parameters%nmf(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("tipm")
+       this%model%parameters%tipm(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mbase")
+       this%model%parameters%mbase(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("plwhc")
+       this%model%parameters%plwhc(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("daygm")
+       this%model%parameters%daygm(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc1")
+       this%model%parameters%adc(1,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc2")
+       this%model%parameters%adc(2,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc3")
+       this%model%parameters%adc(3,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc4")
+       this%model%parameters%adc(4,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc5")
+       this%model%parameters%adc(5,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc6")
+       this%model%parameters%adc(6,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc7")
+       this%model%parameters%adc(7,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc8")
+       this%model%parameters%adc(8,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc9")
+       this%model%parameters%adc(9,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc10")
+       this%model%parameters%adc(10,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc11")
+       this%model%parameters%adc(11,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("elev")
+       this%model%parameters%elev(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("latitude")
+       this%model%parameters%latitude(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("hru_area")
+       this%model%parameters%hru_area(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("total_area")
+       this%model%parameters%total_area = src(1)
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
