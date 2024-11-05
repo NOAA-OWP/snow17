@@ -17,6 +17,7 @@ program multi_driver
   use bmi_snow17_module
   use bmif_2_0
   use dateTimeUtilsModule
+  use snow_log_module
 
   implicit none
 
@@ -43,11 +44,13 @@ program multi_driver
   !  Call the initialize_from_file() subroutine in src/RunSnow17.f90
   !---------------------------------------------------------------------
   print*, "Initializing run ..."
+  call write_log("driver - Initializing run ...", "INFO")
   call get_command_argument(1, namelist_file, status=status)
   !if( .not. ( present(namelist_file) ) ) then
   if( status /= 0 ) then
     namelist_file = "namelist.input"
     print*, 'No namelist filename supplied -- attempting to read default file called namelist.input'
+    call write_log('No namelist filename supplied -- attempting to read default file called namelist.input', 'INFO')
   endif  
   status = m%initialize(namelist_file)
 
@@ -64,6 +67,8 @@ program multi_driver
   call unix_to_datehr(end_time, end_datehr) 
   print*,'----';
   print*, 'Running model => start: ', start_datehr, ' end: ', end_datehr, ' timesteps: ', int((end_time - current_time)/dt)
+  call write_log('Running model => start: '// start_datehr // ' end: ' // end_datehr, 'INFO')
+  call write_log(' timesteps: ' // itoa(int((end_time - current_time)/dt)), 'INFO')
   print*,'----'
   
   ! loop through timesteps and update model while current time <= end time (
@@ -77,7 +82,9 @@ program multi_driver
   ! All model finalization code in ../src/RunSnow17.f90
   !---------------------------------------------------------------------
   print*, "Finalizing..."
+  call write_log("Finalizing...", "INFO")
   status = m%finalize()
   print*, "DONE"
+  call write_log("DONE", "INFO")
 
 end program multi_driver

@@ -4,10 +4,17 @@
 .SUFFIXES: .o .f90
 
 F90   = gfortran
+F_MASTER_DIR = ../../
+
+STDLIB_CFLAGS := `pkg-config --cflags fortran_stdlib`
+STDLIB_LIBS := `pkg-config --libs fortran_stdlib`
+
+DATETIME_F_CFLAGS := `pkg-config --cflags datetime-fortran`
+DATETIME_F_LIBS := `pkg-config --libs datetime-fortran`
 
 FREESOURCE     =       -ffree-form  -ffree-line-length-none
 #F90FLAGS       =   -O3 -g -fbacktrace -Wall -fcheck=all -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp
-F90FLAGS = -O3 -g -fbacktrace -Wall -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp
+F90FLAGS = -O3 -g -fbacktrace -Wall -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
 CPP            =       cpp
 CPPFLAGS       =       -P -traditional -D_GFORTRAN_
 
@@ -30,6 +37,7 @@ snow19_objs = \
 # -- share utilities and code used by the driver in running the model
 run_util_objs = \
 	nrtype.o \
+	snowLogger.o \
 	constants.o \
 	namelistModule.o \
         parametersType.o \
@@ -45,12 +53,11 @@ bmi_functions_objs = bmi.o \
 
 CMD = snow17_driver_test.exe
 
-all:	$(CMD)
-
+#all:	$(CMD)
 $(CMD): $(bmi_functions_objs) $(snow19_objs) $(run_util_objs) \
       	snow17_driver_test.o
 	$(F90) -fPIC -o $(@) -I./ snow17_driver_test.o \
-		$(bmi_functions_objs) $(snow19_objs) $(run_util_objs)
+		$(bmi_functions_objs) $(snow19_objs) $(run_util_objs) $(STDLIB_LIBS) $(DATETIME_F_LIBS)
 
 $(bmi_functions_objs): $(run_util_objs)
 
