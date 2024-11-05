@@ -1,4 +1,5 @@
 module defNamelist
+
 implicit none
 
   ! variable definitions
@@ -26,6 +27,7 @@ implicit none
 end module defNamelist
 
 module namelistModule
+use snow_log_module
 implicit none
 
 type, public :: namelist_type
@@ -56,21 +58,28 @@ contains
   subroutine readNamelist(this, namelist_file)
     use defNamelist
     implicit none
-    
+   
     class(namelist_type) :: this
     ! Optional namelist_file path/filename to read
     ! if not given, the program looks for 'namelist.input' in run directory as a default
     character(len=*), intent (in), optional :: namelist_file
-    
+    integer :: ios
+    ios = 0
+
     print*, 'Reading namelist'
+    call write_log("readNameList : reading namelist", "INFO")
 
     ! -- open and read namelist file
-    open(33, file=namelist_file, form="formatted")
+    open(33, file=namelist_file, form="formatted", IOSTAT=ios)
+    if (ios /= 0) then
+      call write_log('Error opening namelist file ' // namelist_file, "FATAL")
+    end if
+
     read(33, SNOW17_CONTROL)
     close(33)
     
     print*, ' -- simulating basin ', main_id, ' with ', n_hrus, ' snowbands'
-
+    call write_log('readNameList -- simulating basin ' // main_id // ' with ' // itoa(n_hrus) // ' snowbands', "INFO")
     ! -- transfer to namelist datatype
     this%main_id             = main_id
     this%n_hrus              = n_hrus
@@ -90,6 +99,8 @@ contains
     if (this%warm_start_run .eq. 1 .and. this%write_states .eq. 1) then
       this%write_states = 0
       print*, ' -- WARNING: cannot read and write state files at the same time.  Setting write_states option to 0 and continuing'
+      call write_log("readNameList - cannot read and write state files at the same time.", "WARNING")
+      call write_log("Setting write_states option to 0 and continuing", "WARNING")
     endif
 
   end subroutine readNamelist
