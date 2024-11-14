@@ -1,20 +1,18 @@
  module snow_log_module
-  use stdlib_logger, global => global_logger
 
   implicit none      
-  !type :: snowLogger
-  !public :: snowLogger
   character(128) :: errmsg, message
   character(256) :: iomsg
   integer :: iostat, unit, stat
-
-  !type(logger_type) :: logger
+  character(128) :: log_file_name
 
 
   contains
 
 
   function itoa(i) result(res)
+    ! This function convrets an integer to ascii format 
+
     implicit none      
     !class (snowLogger), intent(in) :: this
     character(:),allocatable :: res
@@ -26,17 +24,32 @@
 
   
   function rtoa(i) result(res)
-    !class (snowLogger), intent(in) :: this
-    character(:),allocatable :: res
-    real,intent(in) :: i
-    character*10 format
+    ! This function convrets a real value to ascii format 
 
-    data format /'(F10.2)'/
+    character(128) :: res
+    real,intent(in) :: i
+    character*20 format
+
+    data format /'(F20.10)'/
+    write(res,format)i
+    res = trim(res)
+  end function
+
+  function r8toa(i) result(res)
+    ! This function convrets a real value to ascii format
+
+    character(128) :: res
+    real(KIND=8),intent(in) :: i
+    character(128) format
+
+    data format /'(F10.10)'/
     write(res,format)i
     res = trim(res)
   end function
 
   subroutine get_utc_time(time_stamp)
+    ! This function returns the present time (now) in utc format
+    
     use datetime_module, only:datetime
     implicit none
 
@@ -48,7 +61,7 @@
     integer :: year_val, month_val, day_val, hr_val, min_val, sec_val, ms_val
     character(8)  :: date
     character(10) :: time
-    real :: zone_val
+    double precision :: zone_val
     type(datetime) :: a
 
     call date_and_time(values=dt, date=date, time=time, zone=zone)
@@ -68,14 +81,15 @@
     read (time(5:6), '(I10)') sec_val
     read (time(8:10), '(I10)') ms_val
 
-    a = datetime(year_val, month_val, day_val, hr_val, min_val, sec_val, ms_val, tz=zone_val)
+    a = datetime(year=year_val, month=month_val, day=day_val, hour=hr_val, minute=min_val, second=sec_val, millisecond=ms_val, tz=zone_val)
     a = a % utc()
     time_stamp = a % isoformat()
   end subroutine get_utc_time
 
 
   subroutine get_utc_time_manual(time_stamp)
-    !! Returns current date and time in UTC format.
+    !! Returns current date and time in UTC format. Same as get_utc_time, but does not use datetime lib
+    
     implicit none
     character(len=5)  :: zone
     integer :: hr_time_val, hr_zone_val
@@ -163,13 +177,15 @@
 
 
   subroutine get_log_level(log_level, level) 
+    ! This function returns log level needed by fortran stdlib 
+
     implicit none
     integer, intent(out) :: level
     character(8), intent(in) :: log_level
 
     if (log_level == "INFO") then
       level = 20
-    else if (log_level == "WARN") then
+    else if (log_level == "WARNING") then
       level = 30
     else if (log_level == "DEBUG") then
       level = 10
@@ -182,17 +198,19 @@
 
 
   subroutine create_logger(log_level)
+    ! This is the main function that creates and initialise the log file
+
     implicit none
-    ! class (snowLogger), intent(in) :: this
     character(100) :: log_file_path
-    character(128) :: log_file_name
     character(255) :: cwd
     character(8), intent(in), optional :: log_level
     character(8) :: this_log_level
     character(23) :: time_stamp
     integer :: status
     integer :: level
+    logical :: exist
 
+    ! set the default log level
     if (present(log_level)) then
       this_log_level = log_level
     else
@@ -200,64 +218,63 @@
     end if
     call get_log_level(this_log_level, level)
 
-    call get_utc_time(time_stamp)
-    print*, time_stamp
+    ! Determin log file location
     call get_environment_variable("NGEN_LOG_FILE_PATH", log_file_path)
     write (*,*) trim(log_file_path)
+
+    call get_utc_time(time_stamp)
+    print*, time_stamp
 
     if (trim(adjustl(log_file_path)) == "") then
       print*, "log_file_path not found in env. Using local log file path"
       call getcwd(cwd, status)
       if (status == 0) then
         print *, 'Current working directory: ', trim(cwd)
-        log_file_path = trim(cwd)//'/' //'run_log'
+        log_file_path = trim(cwd)//'/' //'run_log/' //time_stamp(1:10)
+        CALL system("mkdir -p " // log_file_path)
+        log_file_name = trim(log_file_path)// '/' // 'snow_log_' // time_stamp(12:13)//time_stamp(15:16)//time_stamp(18:19)//'.txt'
       else
         print *, 'Error retrieving current directory'
         stop
       end if
+    else
+      log_file_name = trim(log_file_path)
     end if
 
-    log_file_path = trim(log_file_path)//'/' //time_stamp(1:10)
-
-    CALL system("mkdir -p " // log_file_path)
-
-    log_file_name = trim(log_file_path)// '/' // 'snow_log_' // time_stamp(12:13)//time_stamp(15:16)//time_stamp(18:19)//'.txt'
 
     print *, 'log file name: ' // log_file_name
-    call global%add_log_file(log_file_name, unit, &
-                           position='asis', stat=stat)
-    if (stat /= success) then
-      error stop 'Unable to open ' // log_file_name // '.'
+    inquire(file=log_file_name, exist=exist)
+    if (exist) then
+            print *, 'log file already exists'
     end if
-
-    print*, "logger created"  
-    open(newunit=unit, file=log_file_name, form='formatted', status='replace', &
-          position='rewind', action='write', iostat=iostat, iomsg=iomsg)
-    print*, stat
-
-
-    call global%add_log_unit(unit, stat)
-
-    select case ( stat )
-      case ( read_only_error )
-         error stop 'Unable to write to ' // log_file_name // '.'
-      end select
-
-    call global%configure(time_stamp=.false.)
   end subroutine create_logger
 
 
   subroutine write_log(msg, msg_type)
+   !this subroutine writes the log message to the log file
+
    implicit none 
    character(len=*), intent(in)        :: msg
    character(len=*), intent(in)        :: msg_type
    character(len=23) :: utc_time
    character(len=128) :: log_msg
 
+   logical :: exist
+
+   ! get the present time and create the message that will be sent to the log file
    call get_utc_time(utc_time)
    log_msg = utc_time // " SNOW17 " //  msg_type // " " //    msg
 
-   call global % log_message( log_msg)
+   inquire(file=log_file_name, exist=exist)
+   if (exist) then
+    open(12, file=log_file_name, status="old", position="append", action="write")
+  else
+    open(12, file=log_file_name, status="new", action="write")
+  end if
+
+  write(12, *) log_msg
+  close(12)
+
   end subroutine write_log
 
  end module snow_log_module

@@ -8,12 +8,7 @@
 # Define main/top directory (parent of /build/)
 # Note:  the relative path of "../" drops into snow17 parent directory
 F_MASTER_DIR = ../
- 
-STDLIB_CFLAGS := `pkg-config --cflags fortran_stdlib`
-STDLIB_LIBS := `pkg-config --libs fortran_stdlib`
-
-DATETIME_F_CFLAGS := `pkg-config --cflags datetime-fortran`
-DATETIME_F_LIBS := `pkg-config --libs datetime-fortran`
+DATETIME_FORTRAN_INSTALLATION_DIR=../../../extern
  
 # Location of the compiled modules
 # MOD_PATH = $(F_MASTER_DIR)/build/ -- not used
@@ -24,6 +19,7 @@ snow19_dir = $(F_MASTER_DIR)/src/snow19/
 share_dir  = $(F_MASTER_DIR)/src/share/
 bmi_dir    = $(F_MASTER_DIR)/src/bmi/
 exe_dir    = $(F_MASTER_DIR)/bin/
+fdatetime_dir = $(DATETIME_FORTRAN_INSTALLATION_DIR)/datetime-fortran-1.7.0/src/
  
 # Define the executable and path
 EXE = $(exe_dir)/snow17.exe
@@ -52,8 +48,10 @@ endif
 # --- Define flags
 ifeq "$(FC)" "gfortran"
   FLAGS_DEBUG = -static -Wall -g -ffree-line-length-none -cpp -fcheck=all
-  FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all
-  FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all
+  #FLAGS = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all
+  FLAGS = -O3 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all
+  #FLAGS2 = -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all
+  FLAGS2 = -O3 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all
 endif
  
 ifeq "$(FC)" "ifort"
@@ -105,13 +103,16 @@ run_util = \
         modelVarType.f90 \
         ioModule.f90 \
         runSnow17.f90
- 
+
 model_run = $(patsubst %, $(share_dir)/%, $(run_util))
  
 # --- BMI functions used by the driver to run the model
 bmi_functions = bmi.f90 bmi_snow17.f90
 snow17_bmi    = $(patsubst %, $(bmi_dir)/%, $(bmi_functions))
  
+fdatetime_code = datetime_module.f90
+fdatetime = $(patsubst %, $(fdatetime_dir)/%, $(fdatetime_code))
+
 # --- snow17 driver
 driver_snow17 = driver_bmi.f90
 snow17_drv    = $(patsubst %, $(driver_dir)/%, $(driver_snow17))
@@ -136,17 +137,22 @@ check:
  
 # compile model code
 model:
-	$(FC) $(FLAGS2) -c $(model) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
-	$(FC) $(FLAGS) -c $(run_code) $(bmi) $(snow17_drv) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
+	#$(FC) $(FLAGS2) -c $(model) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
+	$(FC) $(FLAGS2) -c $(model) $(fdatetime) $(INC)
+	#$(FC) $(FLAGS) -c $(run_code) $(bmi) $(snow17_drv) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
+	$(FC) $(FLAGS) -c $(run_code) $(bmi) $(snow17_drv) $(INC)
  
 model_debug:
-	$(FC) $(FLAGS2) -g -fcheck=all -c $(model) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
-	$(FC) $(FLAGS) -g -fcheck=all -c $(run_code) $(bmi) $(snow17_drv) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
+	#$(FC) $(FLAGS2) -g -fcheck=all -c $(model) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
+	$(FC) $(FLAGS2) -g -fcheck=all -c $(model) $(fdatetime) $(INC)
+	#$(FC) $(FLAGS) -g -fcheck=all -c $(run_code) $(bmi) $(snow17_drv) $(INC) $(STDLIB_CFLAGS) $(DATETIME_F_CFLAGS)
+	(FC) $(FLAGS) -g -fcheck=all -c $(run_code) $(bmi) $(snow17_drv) $(INC)
  
 # link routines
 link:
 #   $(FC) -fPIC -Bstatic_pgi -rpath,/usr/local/netcdf4-pgi/lib *.o -I./ $(LIBNETCDF) -o $(EXE)
-	$(FC) -fPIC -I./ $(LIB) -o $(EXE) *.o  $(STDLIB_LIBS) $(DATETIME_F_LIBS)
+	#$(FC) -fPIC -I./ $(LIB) -o $(EXE) *.o  $(STDLIB_LIBS) $(DATETIME_F_LIBS)
+	$(FC) -fPIC -I./ $(LIB) -o $(EXE) *.o
  
 # Remove object files
 clean:
