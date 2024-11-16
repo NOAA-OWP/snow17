@@ -99,8 +99,8 @@ contains
     if (this%warm_start_run .eq. 1 .and. this%write_states .eq. 1) then
       this%write_states = 0
       print*, ' -- WARNING: cannot read and write state files at the same time.  Setting write_states option to 0 and continuing'
-      call write_log("readNameList - cannot read and write state files at the same time.", "WARNING")
-      call write_log("Setting write_states option to 0 and continuing", "WARNING")
+      call write_log("readNameList - cannot read and write state files at the same time.", "WARN")
+      call write_log("Setting write_states option to 0 and continuing", "WARN")
     endif
 
   end subroutine readNamelist
