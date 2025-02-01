@@ -7,7 +7,7 @@ module bmi_snow17_module
 #else
    use bmif_2_0
 #endif
-
+  use snow_log_module
   use runModule 
   use, intrinsic :: iso_c_binding, only: c_ptr, c_loc, c_f_pointer
   implicit none
@@ -170,11 +170,13 @@ contains
     character (len=*), intent(in) :: config_file
     integer :: bmi_status
 
+    call create_logger()
     if (len(config_file) > 0) then
        call initialize_from_file(this%model, config_file)
     !else
        !call initialize_from_defaults(this%model)
      end if
+     call write_log("Initialization Done!", "INFO")
     bmi_status = BMI_SUCCESS
   end function snow17_initialize
 
@@ -263,6 +265,7 @@ contains
     ! check to see if desired time to advance to is earlier than current time (can't go backwards)
     if (time < this%model%runinfo%curr_datetime) then
        bmi_status = BMI_FAILURE
+       call write_log("check to see if desired time to advance to is earlier than current time", "ERROR")
        return
     end if
     ! otherwise try to advance to end time
@@ -299,6 +302,7 @@ contains
        bmi_status = BMI_SUCCESS
     case default
        grid = -1
+       call write_log("snow17_var_grid - " // name // " not found.", "ERROR")
        bmi_status = BMI_FAILURE
     end select
   end function snow17_var_grid
@@ -320,6 +324,7 @@ contains
 !        bmi_status = BMI_SUCCESS
     case default
        type = "-"
+       call write_log("snow17_grid_type - " // itoa(grid) // " not found.", "ERROR")
        bmi_status = BMI_FAILURE
     end select
   end function snow17_grid_type
@@ -342,6 +347,7 @@ contains
     case default
        rank = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_rank - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_rank
 
@@ -361,6 +367,7 @@ contains
     case default
        shape(:) = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_shape - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_shape
 
@@ -382,6 +389,7 @@ contains
     case default
        size = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_size - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_size
 
@@ -401,6 +409,7 @@ contains
     case default
        spacing(:) = -1.d0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_spacing - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_spacing
 !
@@ -420,6 +429,7 @@ contains
     case default
        origin(:) = -1.d0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_apacing - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_origin
 
@@ -437,6 +447,7 @@ contains
     case default
        x(:) = -1.d0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_x - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_x
 
@@ -454,6 +465,7 @@ contains
     case default
        y(:) = -1.d0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_y - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_y
 
@@ -471,6 +483,7 @@ contains
     case default
        z(:) = -1.d0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_z - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_z
 
@@ -487,6 +500,7 @@ contains
     case default
        count = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_grid_node_count - " // itoa(grid) // " not found.", "ERROR")
     end select
   end function snow17_grid_node_count
 
@@ -499,6 +513,7 @@ contains
 
     count = -1
     bmi_status = BMI_FAILURE
+    call write_log("snow17_grid_edge_count - " // itoa(grid) // " not found.", "ERROR")
   end function snow17_grid_edge_count
 
   ! Get the number of faces in an unstructured grid.
@@ -510,6 +525,7 @@ contains
 
     count = -1
     bmi_status = BMI_FAILURE
+    call write_log("snow17_grid_face_count - " // itoa(grid) // " not found.", "ERROR")
   end function snow17_grid_face_count
 
   ! Get the edge-node connectivity.
@@ -521,6 +537,7 @@ contains
 
     edge_nodes(:) = -1
     bmi_status = BMI_FAILURE
+    call write_log("snow17_grid_edge_nodes - " // itoa(grid) // " not found.", "ERROR")
   end function snow17_grid_edge_nodes
 
   ! Get the face-edge connectivity.
@@ -532,6 +549,7 @@ contains
 
     face_edges(:) = -1
     bmi_status = BMI_FAILURE
+    call write_log("snow17_grid_face_edges - " // itoa(grid) // " not found.", "ERROR")
   end function snow17_grid_face_edges
 
   ! Get the face-node connectivity.
@@ -543,6 +561,7 @@ contains
 
     face_nodes(:) = -1
     bmi_status = BMI_FAILURE
+    call write_log("snow17_grid_face_nodes - " // itoa(grid) // " not found.", "ERROR")
   end function snow17_grid_face_nodes
 
   ! Get the number of nodes for each face.
@@ -554,6 +573,7 @@ contains
 
     nodes_per_face(:) = -1
     bmi_status = BMI_FAILURE
+    call write_log("snow17_grid_nodes_per_face - " // itoa(grid) // " not found.", "ERROR")
   end function snow17_grid_nodes_per_face
 
   ! The data type of the variable, as a string.
@@ -584,6 +604,7 @@ contains
     case default
        type = "-"
        bmi_status = BMI_FAILURE
+       call write_log("snow17_var_type - " // name // " not found.", "ERROR")
     end select
   end function snow17_var_type
 
@@ -628,6 +649,7 @@ contains
     case default
        units = "-"
        bmi_status = BMI_FAILURE
+       call write_log("snow17_var_unit - " // name // " not found.", "ERROR")
     end select
   end function snow17_var_units
 
@@ -746,6 +768,7 @@ contains
     case default
        size = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_var_itemsize - " // name // " not found.", "ERROR")
     end select
   end function snow17_var_itemsize
 
@@ -766,6 +789,7 @@ contains
     else
        nbytes = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_var_nbytes - " // name // " not found.", "ERROR")
     end if
   end function snow17_var_nbytes
 
@@ -798,6 +822,7 @@ contains
     case default
        dest(:) = -1
        bmi_status = BMI_FAILURE
+       call write_log("snow17_get_int - " // name // " not found.", "ERROR")
     end select
   end function snow17_get_int
 
@@ -911,6 +936,7 @@ contains
     case default
        dest(:) = -1.0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_get_float - " // name // " not found.", "ERROR")
     end select
     ! NOTE, if vars are gridded, then use:
     ! dest = reshape(this%model%temperature, [this%model%n_x*this%model%n_y]) 
@@ -929,6 +955,7 @@ contains
     case default
        dest(:) = -1.d0
        bmi_status = BMI_FAILURE
+       call write_log("snow17_get_double - " // name // " not found.", "ERROR")
     end select
   end function snow17_get_double
 
@@ -948,6 +975,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_get_ptr_int - " // name // " not found.", "ERROR")
      end select
    end function snow17_get_ptr_int
 
@@ -963,6 +991,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_get_ptr_float - " // name // " not found.", "ERROR")
      end select
    end function snow17_get_ptr_float
 
@@ -980,6 +1009,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_get_ptr_double - " // name // " not found.", "ERROR")
      end select
    end function snow17_get_ptr_double
 
@@ -998,6 +1028,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_get_at_indices_int - " // name // " not found.", "ERROR")
      end select
    end function snow17_get_at_indices_int
 
@@ -1016,6 +1047,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_get_at_indices_float - " // name // " not found.", "ERROR")
      end select
    end function snow17_get_at_indices_float
 
@@ -1034,6 +1066,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_get_at_indices_double - " // name // " not found.", "ERROR")
      end select
    end function snow17_get_at_indices_double
 
@@ -1052,6 +1085,7 @@ contains
 !        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
+       call write_log("snow17_set_int - " // name // " not found.", "ERROR")
     end select
   end function snow17_set_int
 
@@ -1167,6 +1201,7 @@ contains
        bmi_status = BMI_SUCCESS
     case default
        bmi_status = BMI_FAILURE
+       call write_log("snow17_set_float - " // name // " not found.", "ERROR")
     end select
     ! NOTE, if vars are gridded, then use:
     ! this%model%temperature = reshape(src, [this%model%n_y, this%model%n_x])
@@ -1184,6 +1219,7 @@ contains
     select case(name)
     case default
        bmi_status = BMI_FAILURE
+       call write_log("snow17_set_double - " // name // " not found.", "ERROR")
     end select
   end function snow17_set_double
 
@@ -1202,6 +1238,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_set_indices_at_int - " // name // " not found.", "ERROR")
      end select
    end function snow17_set_at_indices_int
 
@@ -1220,6 +1257,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_set_indices_at_float - " // name // " not found.", "ERROR")
      end select
    end function snow17_set_at_indices_float
 
@@ -1238,6 +1276,7 @@ contains
      select case(name)
      case default
         bmi_status = BMI_FAILURE
+        call write_log("snow17_set_indices_at_double - " // name // " not found.", "ERROR")
      end select
    end function snow17_set_at_indices_double
 
@@ -1283,6 +1322,7 @@ contains
 
    if( .not. associated( bmi_box ) .or. .not. associated( bmi_box%ptr ) ) then
     bmi_status = BMI_FAILURE
+    call write_log("register_bmi - Cant associate the wrapper pointer to the created model instance", "ERROR")
    else
     !Return the pointer to box
     this = c_loc(bmi_box)
