@@ -67,19 +67,19 @@ contains
     ios = 0
 
     print*, 'Reading namelist'
-    call write_log("readNameList : reading namelist", "INFO")
+    call write_log("readNameList : reading namelist", LOG_LEVEL_INFO)
 
     ! -- open and read namelist file
     open(33, file=namelist_file, form="formatted", IOSTAT=ios)
     if (ios /= 0) then
-      call write_log('Error opening namelist file ' // namelist_file, "FATAL")
+      call write_log('Error opening namelist file ' // namelist_file, LOG_LEVEL_FATAL)
     end if
 
     read(33, SNOW17_CONTROL)
     close(33)
     
     print*, ' -- simulating basin ', main_id, ' with ', n_hrus, ' snowbands'
-    call write_log('readNameList -- simulating basin ' // main_id // ' with ' // itoa(n_hrus) // ' snowbands', "INFO")
+    call write_log('readNameList -- simulating basin ' // main_id // ' with ' // itoa(n_hrus) // ' snowbands', LOG_LEVEL_INFO)
     ! -- transfer to namelist datatype
     this%main_id             = main_id
     this%n_hrus              = n_hrus
@@ -99,8 +99,8 @@ contains
     if (this%warm_start_run .eq. 1 .and. this%write_states .eq. 1) then
       this%write_states = 0
       print*, ' -- WARNING: cannot read and write state files at the same time.  Setting write_states option to 0 and continuing'
-      call write_log("readNameList - cannot read and write state files at the same time.", "WARN")
-      call write_log("Setting write_states option to 0 and continuing", "WARN")
+      call write_log("readNameList - cannot read and write state files at the same time.", LOG_LEVEL_SEVERE)
+      call write_log("Setting write_states option to 0 and continuing", LOG_LEVEL_SEVERE)
     endif
 
   end subroutine readNamelist
