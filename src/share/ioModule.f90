@@ -33,12 +33,11 @@ contains
     ! open parameter file
     open(unit=51,file=trim(param_file_name),status='old', IOSTAT=ios)
     if (ios /= 0) then
-      print *, 'Error opening file : ', param_file_name
-      call write_log('Error opening file : ' // param_file_name, LOG_LEVEL_FATAL)
+      call write_log('Error opening file: ' // param_file_name, LOG_LEVEL_FATAL)
+      stop
     endif
  
-    print*, 'Reading Snow17 parameters'
-    call write_log("ioModule - Reading Snow17 parameters", LOG_LEVEL_INFO)
+    call write_log("Reading Snow17 parameters", LOG_LEVEL_INFO)
   
     ! --- now loop through parameter file and assign parameters 
     n_params_read = 0
@@ -139,8 +138,7 @@ contains
             read(readline, *, iostat=ios) this%adc(11,:)
             n_params_read = n_params_read + 1
           case default
-            print *, 'Parameter ',param,' not recognized in snow file'
-            call write_log('ioModule - Parameter ' // param // ' not recognized in snow file', LOG_LEVEL_SEVERE)
+            call write_log('Parameter ' // param // ' not recognized in snow file', LOG_LEVEL_SEVERE)
         end select
   
       end if
@@ -150,8 +148,7 @@ contains
   
     ! quick check on completeness
     if(n_params_read /= 26) then
-      print *, 'Read ', n_params_read , ' SNOW17 params, but need 26.  Quitting.'; stop
-      call write_log("ioModule - Read " // itoa(n_params_read) // " SNOW17 params, but need 26.  Quitting.", LOG_LEVEL_FATAL)
+      call write_log("Read " // itoa(n_params_read) // " SNOW17 params, but need 26.  Quitting.", LOG_LEVEL_FATAL)
     end if
     
     ! calculate derived parameters
@@ -181,9 +178,7 @@ contains
     real			    :: pcp, tav
 
     ! --- code ------------------------------------------------------------------
-    print*, 'Initializing forcing files'
-    ios = 0
-    call write_log("ioModule - Initializing forcing files", "LOG_LEVEL_INFO")
+    call write_log("Initializing forcing files", LOG_LEVEL_INFO)
     found_start = 0
     do nh=1, runinfo%n_hrus
 
@@ -194,6 +189,7 @@ contains
       inquire(file = trim(filename), exist = lexist)
       if (.not. lexist) then
          call write_log('Problem !! File ' // trim(filename) // 'does not exists.  Quitting.', LOG_LEVEL_FATAL)
+         call write_log('Check the forcing file specified as a command-line argument.', LOG_LEVEL_FATAL)
          write(*,'(/," ***** Problem *****")')
          write(*,'(" ***** File ''", A, "'' does not exist.")') trim(filename)
          write(*,'(" ***** Check the forcing file specified as a command-line argument",/)')
@@ -226,8 +222,7 @@ contains
       end do
       
       if(nh .eq. 1) then
-        print*, ' -- skipped ', skipcount ,' initial records in forcing files'
-        call write_log('ioModule -- skipped ' // itoa(skipcount) // ' inaitial records in forcing files', LOG_LEVEL_INFO)
+        call write_log('Skipped ' // itoa(skipcount) // ' inaitial records in forcing files', LOG_LEVEL_INFO)
       endif 
       
       ! backspace the file to the previous record
@@ -237,8 +232,8 @@ contains
     
     ! error out if start of any forcing file is not found
     if (found_start /= runinfo%n_hrus) then
-      call write_log('ERROR: found the starting date in only' // itoa(found_start )// ' out of' // itoa( runinfo%n_hrus) // 'forcing files.', LOG_LEVEL_FATAL)
-      print*, 'ERROR: found the starting date in only', found_start, ' out of', runinfo%n_hrus, ' forcing files.  Quitting.'; stop
+      call write_log('Found the starting date in only' // itoa(found_start )// ' out of' // itoa( runinfo%n_hrus) // 'forcing files. Quitting', LOG_LEVEL_FATAL)
+      stop
     endif
 
   END SUBROUTINE init_forcing_files
@@ -287,9 +282,8 @@ contains
       ! read one record from already open files and check success
       read (UNIT=runinfo%forcing_fileunits(nh), FMT=*, IOSTAT=ierr) yr, mnth, dy, hr, forcing%precip(nh), forcing%tair(nh)
       if(ierr /= 0) then
-        log_msg = 'ERROR:  failed to read forcing from file ' // trim(namelist%forcing_root) // trim(parameters%hru_id(nh))
+        log_msg = 'Failed to read forcing from file ' // trim(namelist%forcing_root) // trim(parameters%hru_id(nh))
         call write_log(log_msg // '  STOPPING', LOG_LEVEL_FATAL)       
-        print*, 'ERROR:  failed to read forcing from file', trim(namelist%forcing_root) // trim(parameters%hru_id(nh))
         STOP
       end if
 
@@ -298,9 +292,8 @@ contains
       !print*, 'Read forcing datehr ', forcing_datehr
 
       if(forcing_datehr /= runinfo%curr_datehr) then
-        log_msg = 'ERROR: forcing datehr: ' // forcing_datehr // ' does not match curr_datehr of run :' // runinfo%curr_datehr
+        log_msg = 'Forcing datehr: ' // forcing_datehr // ' does not match curr_datehr of run :' // runinfo%curr_datehr
         call write_log(log_msg // " STOPING", LOG_LEVEL_FATAL)
-        print*, 'ERROR: forcing datehr: ',forcing_datehr, ' does not match curr_datehr of run :', runinfo%curr_datehr
         STOP
       end if 
                                                         
@@ -324,14 +317,13 @@ contains
 
     ! --- code ------------------------------------------------------------------
 
-    print*, 'Initializing output files'
     call write_log("Initializing output files", LOG_LEVEL_INFO)
 
     ! Open the main basin-average output file and write header
     filename = trim(namelist%output_root) // trim(namelist%main_id)	// '.txt'
     open(runinfo%output_fileunits(1), file = trim(filename), form = 'formatted', action = 'write', status='replace', iostat = ierr)
     if (ierr /= 0) then
-      call write_log("Problem opening file " // trim(filename) //". EXITING", LOG_LEVEL_SEVERE)      
+      call write_log("Problem opening file " // trim(filename) //". EXITING", LOG_LEVEL_FATAL)      
       write(*,'("Problem opening file ''", A, "''")') trim(filename)
       stop ":  ERROR EXIT"
     endif
@@ -377,7 +369,6 @@ contains
 
     ! --- code ------------------------------------------------------------------
     
-    print*, 'Initializing new restart files'
     call write_log('Initializing new restart files', LOG_LEVEL_INFO)
     ! if user setting is to write out state files, open one for each snowband and write header row
     if (namelist%write_states == 1) then
@@ -420,8 +411,8 @@ contains
     write(runinfo%state_fileunits(n_curr_hru), 41, iostat=ierr) runinfo%curr_yr, runinfo%curr_mo, runinfo%curr_dy, runinfo%curr_hr, &
           modelvar%tprev(n_curr_hru), modelvar%cs(:,n_curr_hru)
     if(ierr /= 0) then
-      call write_log("ERROR writing state file information for sub-unit " // itoa(n_curr_hru) // ". STOPPING", LOG_LEVEL_SEVERE)      
-      print*, 'ERROR writing state file information for sub-unit ', n_curr_hru; stop
+      call write_log("Error writing state file information for sub-unit " // itoa(n_curr_hru) // ". STOPPING", LOG_LEVEL_FATAL)      
+      stop
     endif
     
     return
@@ -452,14 +443,12 @@ contains
     integer               :: states_found         ! counter to match hrus
     
     ! ---- code -----
-    print*, 'Reading restart files'
     call write_log('Reading restart files', LOG_LEVEL_INFO)
     
     ! starting statefiles match format of statefile outputs (date then variables)
     !   statefile read looks for matching date timestep before run start because states are written at end of timestep
     prev_datetime = (runinfo%start_datetime - runinfo%dt)         ! decrement unix model run time in seconds by DT
     call unix_to_datehr (dble(prev_datetime), state_datehr)    ! create statefile datestring to match
-    print*, ' -- state datehr: ', state_datehr
     call write_log(" -- state datehr: " // trim(state_datehr), LOG_LEVEL_INFO)
 
     ! loop over hrus and read and store initial state values
@@ -502,12 +491,9 @@ contains
     
     ! check to make sure enough states on correct dates were found
     if (states_found /= runinfo%n_hrus) then 
-      call write_log("ERROR:  matching state not found in sac restart file.  Looking for state date: " // trim(state_datehr), LOG_LEVEL_SEVERE)
-      call write_log("last state read was on: " // trim(statefile_datehr) // ". STOPPING. CHECK INPUTS", LOG_LEVEL_SEVERE)
-       
-      print*, 'ERROR:  matching state not found in snow17 restart file.  Looking for state date: ', state_datehr
-      print*, '  -- last state read was on: ', statefile_datehr
-      print*, 'Stopping.  Check inputs!'; stop
+      call write_log("Matching state not found in sac restart file.  Looking for state date: " // trim(state_datehr), LOG_LEVEL_FATAL)
+      call write_log("last state read was on: " // trim(statefile_datehr) // ". STOPPING. CHECK INPUTS!", LOG_LEVEL_FATAL)
+      stop
     endif
     
     return
@@ -547,8 +533,8 @@ contains
             forcing%precip_scf(n_curr_hru)*runinfo%dt, &
             modelvar%sneqv(n_curr_hru)*1000., modelvar%snowh(n_curr_hru), modelvar%raim(n_curr_hru)*runinfo%dt
       if(ierr /= 0) then
-        call write_log('ERROR writing output information for sub-unit ' // itoa(n_curr_hru) // '. STOPPING.', LOG_LEVEL_SEVERE)      
-        print*, 'ERROR writing output information for sub-unit ', n_curr_hru; stop
+        call write_log('ERROR writing output information for sub-unit ' // itoa(n_curr_hru) // '. STOPPING.', LOG_LEVEL_FATAL)      
+        stop
       endif            
     end if  ! IF case for writing HRU-specific output to file (not including states)
 
@@ -561,8 +547,8 @@ contains
             forcing%tair_comb, forcing%precip_comb*runinfo%dt, forcing%precip_scf_comb*runinfo%dt, &
             modelvar%sneqv_comb*1000.0, modelvar%snowh_comb, modelvar%raim_comb*runinfo%dt
       if(ierr /= 0) then
-        call write_log("ERROR writing output information for basin average. STOPPING.", LOG_LEVEL_FATAL)      
-        print*, 'ERROR writing output information for basin average'; stop
+        call write_log("ERROR writing output information for basin average. STOPPING.", LOG_LEVEL_FATAL)   
+        stop
       endif
     endif 
 
