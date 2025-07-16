@@ -13,6 +13,7 @@ C           ERIC ANDERSON - HRL - DECEMBER 1982
 
 CVK        MODIFIED 4/00 BY V. KOREN: TWO NEW STATES ADDED
 C.......................................
+      REAL LIQW
       DIMENSION ADC(11)
 C
 C     COMMON BLOCKS
