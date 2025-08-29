@@ -631,6 +631,21 @@ contains
     case("raim")
        size = sizeof(this%model%modelvar%raim_comb)
        bmi_status = BMI_SUCCESS
+    case("scf")
+       size = sizeof(this%model%parameters%scf(1))
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       size = sizeof(this%model%parameters%mfmax(1))
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       size = sizeof(this%model%parameters%mfmin(1))
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       size = sizeof(this%model%parameters%uadj(1))
+       bmi_status = BMI_SUCCESS
+    case("si")
+       size = sizeof(this%model%parameters%si(1))
+       bmi_status = BMI_SUCCESS
     case default
        size = -1
        bmi_status = BMI_FAILURE
