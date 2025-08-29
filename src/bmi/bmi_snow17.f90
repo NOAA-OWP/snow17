@@ -287,6 +287,9 @@ contains
          'precip_scf', 'sneqv', 'snowh', 'raim')   ! output vars
        grid = 0
        bmi_status = BMI_SUCCESS
+    case('scf', 'mfmax', 'mfmin', 'uadj', 'si')       ! parameters
+       grid = 0
+       bmi_status = BMI_SUCCESS
     case default
        grid = -1
        bmi_status = BMI_FAILURE
@@ -556,6 +559,9 @@ contains
     select case(name)
     case('tair', 'precip', &                            ! input/output vars
          'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
+       type = "real"
+       bmi_status = BMI_SUCCESS
+    case('scf', 'mfmax', 'mfmin', 'uadj', 'si')       ! parameters
        type = "real"
        bmi_status = BMI_SUCCESS
     case default
@@ -886,6 +892,23 @@ contains
     case("raim")
        this%model%modelvar%raim(1) = src(1)
        bmi_status = BMI_SUCCESS
+    ! parameters
+    case("scf")
+       this%model%parameters%scf(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mfmax")
+       this%model%parameters%mfmax(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("mfmin")
+       this%model%parameters%mfmin(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("uadj")
+       this%model%parameters%uadj(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("si")
+       this%model%parameters%si(:) = src(:)
+       bmi_status = BMI_SUCCESS
+
     case default
        bmi_status = BMI_FAILURE
     end select
