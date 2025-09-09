@@ -26,10 +26,13 @@ contains
     ! local variables
     character(len=400)      :: readline
     character(len=50)		:: param
-    integer    	            :: ios=0   ! specify i4b with nrtype?
+    integer    	            :: ios   ! specify i4b with nrtype?
     integer                 :: pos
     integer                 :: n_params_read, nh  ! counters
   
+    !Use assignment instead of declaration+initialization to avoid SAVE attribute gotcha
+    ios = 0
+
     ! open parameter file
     open(unit=51,file=trim(param_file_name),status='old', IOSTAT=ios)
     if (ios /= 0) then
@@ -179,6 +182,8 @@ contains
 
     ! --- code ------------------------------------------------------------------
     call write_log("Initializing forcing files", LOG_LEVEL_INFO)
+
+    ios = 0
     found_start = 0
     do nh=1, runinfo%n_hrus
 
@@ -296,15 +301,6 @@ contains
         call write_log(log_msg // " STOPING", LOG_LEVEL_FATAL)
         STOP
       end if 
-
-      ! update other forcing fields (derived)
-      ! NOTE: this is written now for a single temperature input (tair), but the standard for running snow17+sac is tmin/tmax
-      !       we could return to the standard though a namelist option if needed
-      forcing%precip_scf(nh) = forcing%precip(nh) * parameters%scf(nh)   ! scale input precip by snow correction factor
-                                                                         ! (note: this is for output; model input 
-                                                                         ! precip is scaled in pack19()
-
-      call sfc_pressure(parameters%elev(nh), forcing%pa(nh))             ! fill in the surface pressure field                   
                                                         
     end do  ! end loop across snowbands (hrus)
     
@@ -397,7 +393,7 @@ contains
       
         ! Write 1-line header
         write(runinfo%state_fileunits(nh),'(A)') &
-         'datehr tprev cs1 cs2 cs3 cs4 cs5 cs6 cs7 cs8cs9 cs10 cs11 cs12 cs13 cs14 cs15 cs16 cs17 cs18 cs19'
+         'datehr tprev cs1 cs2 cs3 cs4 cs5 cs6 cs7 cs8 cs9 cs10 cs11 cs12 cs13 cs14 cs15 cs16 cs17 cs18 cs19'
   
       end do  ! end loop over sub-units
     end if   

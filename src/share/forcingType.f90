@@ -28,7 +28,7 @@ contains
     use defNamelist
     implicit none
 
-    class(forcing_type), intent(out) :: this
+    class(forcing_type), intent(inout) :: this
     type(namelist_type), intent(in)  :: namelist
 
     ! -- variable allocations (time dim not needed since forcings are one-rec scalars)

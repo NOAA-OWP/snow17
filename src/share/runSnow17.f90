@@ -151,6 +151,10 @@ contains
 
         prcp_mm = forcing%precip(nh)*runinfo%dt   ! convert prcp input to a depth per timestep (mm)
 
+        call sfc_pressure(parameters%elev(nh), forcing%pa(nh))  ! fill in the surface pressure field (in mb)
+                                                                ! uses elev. based constant PA (Anderson, 2006)
+                                                                ! (alternative: input PA as a dynamic forcing)
+
         call exsnow19(int(runinfo%dt), int(runinfo%dt/3600), runinfo%curr_dy, runinfo%curr_mo, runinfo%curr_yr, &
     	  ! SNOW17 INPUT AND OUTPUT VARIABLES
           prcp_mm, forcing%tair(nh), modelvar%raim(nh), modelvar%sneqv(nh), modelvar%snow(nh), modelvar%snowh(nh), &
@@ -165,6 +169,9 @@ contains
 
         ! convert raim output to a rate (mm/s)
         modelvar%raim(nh) = modelvar%raim(nh) / runinfo%dt
+
+        ! scale precip by correction factor (nb: for output; model input precip is scaled in pack19()
+        forcing%precip_scf(nh) = forcing%precip(nh) * parameters%scf(nh) 
         
         ! update basin-averaged variables
         forcing%tair_comb        = forcing%tair_comb + forcing%tair(nh) * parameters%hru_area(nh)
