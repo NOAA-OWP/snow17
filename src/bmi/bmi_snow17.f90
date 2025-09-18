@@ -831,6 +831,7 @@ contains
     character (len=*), intent(in) :: name
     real, intent(inout) :: dest(:)
     integer :: bmi_status
+    character(len=256) :: msg ! for logging messages
 
     select case(name)
     case("precip")
@@ -850,7 +851,25 @@ contains
        bmi_status = BMI_SUCCESS
     case("raim")
        dest(1) = this%model%modelvar%raim_comb
-       bmi_status = BMI_SUCCESS
+
+       ! handle very small negative raim values that can occur due to round-off error or floating-point artifacts
+       if (dest(1) < 0.0 .and. dest(1) > -1.0e-6) then
+          dest(1) = 0.0
+          write(msg, '(A,ES12.5,A)') "snow17_get_float - 'raim' is negligibly negative (", &
+                                 this%model%modelvar%raim_comb, " mm/s), set to 0.0"
+          call write_log(msg, LOG_LEVEL_WARNING)
+          bmi_status = BMI_SUCCESS
+
+       ! Throw an error if it’s truly negative
+       else if (this%model%modelvar%raim(1) <= -1.0e-6) then
+          write(msg,'(A,ES12.5,A)') "snow17_get_float - 'raim' is invalid (", this%model%modelvar%raim(1), \
+                                 " mm/s), must be non-negative."
+          call write_log(msg, LOG_LEVEL_SEVERE)
+          bmi_status = BMI_FAILURE
+       else
+          bmi_status = BMI_SUCCESS
+       end if
+
     !case("hru_id")
     !   dest = [this%model%parameters%hru_id]
     !   bmi_status = BMI_SUCCESS
@@ -1093,7 +1112,7 @@ contains
     class (bmi_snow17), intent(inout) :: this
     character (len=*), intent(in) :: name
     real, intent(in) :: src(:)
-    integer :: bmi_status
+    integer :: bmi_status    
 
     ! NOTE: if run in a vector (snowband mode), this code will need revising
     !       to set the basin average (ie, restart capability)
