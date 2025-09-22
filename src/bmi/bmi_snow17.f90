@@ -857,7 +857,7 @@ contains
           dest(1) = 0.0
           write(msg, '(A,ES12.5,A)') "snow17_get_float - 'raim' is negligibly negative (", &
                                  this%model%modelvar%raim_comb, " mm/s), set to 0.0"
-          call write_log(msg, LOG_LEVEL_WARNING)
+          call write_log(msg, LOG_LEVEL_INFO)
           bmi_status = BMI_SUCCESS
 
        ! Throw an error if it’s truly negative
