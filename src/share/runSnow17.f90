@@ -8,6 +8,9 @@ module runModule
   use runInfoType
   use forcingType
   use modelVarType
+  use snow_log_module
+  use messagepack
+  use iso_fortran_env
 
   implicit none
 
@@ -17,6 +20,7 @@ module runModule
     type(parameters_type) :: parameters
     type(forcing_type)    :: forcing
     type(modelvar_type)   :: modelvar
+    byte, dimension(:), allocatable :: serialization_buffer
   end type snow17_type
 
 contains
@@ -245,7 +249,156 @@ contains
       close(model%runinfo%state_fileunits(nh))
     end do
 #endif
-  
+    !Free up serialization buffer memory
+    if(allocated(model%serialization_buffer)) then
+      deallocate(model%serialization_buffer)
+    end if
+
   end subroutine cleanup
 
-end module runModule              
+  SUBROUTINE new_serialization_request (model, exec_status)
+    type(snow17_type), intent(inout) :: model
+    integer(kind=int64) :: nh !counter for HRUs
+    class(msgpack), allocatable :: mp
+    class(mp_arr_type), allocatable :: mp_sub_arr
+    class(mp_arr_type), allocatable :: mp_state_arr
+    class(mp_arr_type), allocatable :: mp_cs_arr
+    byte, dimension(:), allocatable :: serialization_buffer
+    integer(kind=int64), intent(out) :: exec_status
+
+    modelvar%cs(:,n_curr_hru)
+        allocate(this%tprev (1:namelist%n_hrus))
+
+    mp = msgpack()
+    mp_cs_arr = mp_arr_type(model%runinfo%n_hrus)
+    do nh=1, model%runinfo%n_hrus
+        mp_sub_arr = mp_arr_type(19)
+        mp_sub_arr = transfer_values_to_mp(model%modelvar%cs(:,nh))
+        mp_cs_arr%values(nh)%obj = mp_sub_arr
+    end do
+
+    !Add the time information and the state variables by HRU to the main mp array.
+    mp_state_arr = mp_arr_type(6)
+    mp_state_arr%values(1)%obj = mp_int_type(model%runinfo%curr_yr) !curr_yr
+    mp_state_arr%values(2)%obj = mp_int_type(model%runinfo%curr_mo) !curr_mo
+    mp_state_arr%values(3)%obj = mp_int_type(model%runinfo%curr_dy) !curr_dy
+    mp_state_arr%values(4)%obj = mp_int_type(model%runinfo%curr_hr) !curr_hr
+    mp_state_arr%values(5)%obj = transfer_values_to_mp(model%modelvar%tprev)
+    mp_state_arr%values(6)%obj = mp_cs_arr
+            
+    ! pack the data
+    call mp%pack_alloc(mp_state_arr, serialization_buffer)
+    if (mp%failed()) then
+        call write_log("Serialization using messagepack failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+        exec_status = 1
+    else
+        exec_status = 0
+        model%serialization_buffer = serialization_buffer
+        call write_log("Serialization using messagepack successful!", LOG_LEVEL_DEBUG)
+    end if
+  END SUBROUTINE new_serialization_request
+
+  SUBROUTINE deserialize_mp_buffer (model, serialized_data)
+    type(snow17_type), intent(inout) :: model
+    integer , intent(in) :: serialized_data(:)
+    byte, allocatable :: serialized_data_1b(:)
+    class(msgpack), allocatable :: mp
+    class(mp_value_type), allocatable :: mpv
+    class(mp_arr_type), allocatable :: arr
+    class(mp_arr_type), allocatable :: arr_tprev_hrus
+    class(mp_arr_type), allocatable :: arr_cs_hrus
+    class(mp_arr_type), allocatable :: arr_state
+    integer(kind=int64) :: nh, yr, mo, dd, hr
+    logical :: status
+    
+    mp = msgpack()
+    !convert integer(4) to integer(1) for messagepack
+    allocate(serialized_data_1b(size(serialized_data, 1, int64)*4_int64))
+    serialized_data_1b = transfer(serialized_data, serialized_data_1b) 
+    call mp%unpack(serialized_data_1b, mpv)
+    if (is_arr(mpv)) then
+      call get_arr_ref(mpv, arr_state, status) 
+      if (status) then
+        !Update the start and current time for the runInfo.
+        call get_int(arr_state%values(1)%obj, yr, status)
+        model%runinfo%curr_yr = yr
+        call get_int(arr_state%values(2)%obj, mo, status)
+        model%runinfo%curr_mo = mo
+        call get_int(arr_state%values(3)%obj, dd, status)
+        model%runinfo%curr_dy = dd
+        call get_int(arr_state%values(4)%obj, hr, status)
+        model%runinfo%curr_hr = hr
+        
+        call get_arr_ref(arr_state%values(5)%obj,arr_tprev_hrus,status)
+        if(status) then
+          !The number of elements in the serialized HRU data array for tprev is expected to match the 
+          !number of HRUs. Check here and stop if they are not equal.
+          if (arr_tprev_hrus%numelements() .NE. model%runinfo%n_hrus) then
+            call write_log("The serialized data for model variable tprev does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
+            stop
+          else
+            model%modelvar%tprev = transfer_values_from_mp(arr_tprev_hrus)
+          end if
+        else
+          call write_log("Deserializing data for model variable tprev failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+        end if
+
+        call get_arr_ref(arr_state%values(6)%obj,arr_cs_hrus,status)
+        if(status) then
+          !The number of elements in the serialized HRU data array for cs is expected to match the 
+          !number of HRUs. Check here and stop if they are not equal.
+          if (arr_cs_hrus%numelements() .NE. model%runinfo%n_hrus) then
+            call write_log("The serialized data model variable cs does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
+            stop
+          else
+            do nh=1, model%runinfo%n_hrus
+              call get_arr_ref(arr_cs_hrus%values(nh)%obj,arr,status)
+              if (status) then
+                modelvar%cs(:,nh) = transfer_values_from_mp(arr)
+              else
+                call write_log("Serialization using messagepack (HRU internal array) failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+              end if
+            end do
+          end if  
+        else
+          call write_log("Deserializing data for model variable cs failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+        end if
+      else
+        call write_log("Getting an array reference to deserialized data failed! Error: " // mp%error_message, LOG_LEVEL_FATAL)  
+      end if
+    else
+      call write_log("Deserialized data structure is not a messagepack array. Error: " // mp%error_message, LOG_LEVEL_FATAL)  
+    end if
+    deallocate (mpv)
+    deallocate (serialized_data_1b)
+  
+  END SUBROUTINE deserialize_mp_buffer
+
+  FUNCTION transfer_values_to_mp (src) RESULT (dest)
+
+    real, allocatable, dimension(:), intent(in) :: src
+    class(mp_arr_type), allocatable :: dest
+    integer(kind=int64) :: index
+
+        do index=LBOUND(src,1), UBOUND(src,1)
+            dest%values(index)%obj = mp_float_type(src(index))
+        end do
+
+  END FUNCTION transfer_values_to_mp
+
+  FUNCTION transfer_values_from_mp (src) RESULT (dest)
+
+    class(mp_arr_type), allocatable, intent(in) :: src
+    real, allocatable, dimension(:) :: dest
+    real(kind=real64) :: deserialized_val
+    integer(kind=int64) :: index
+    logical :: status
+        
+        do index=1, src%numelements()
+            call get_real(src%values(index)%obj, deserialized_val, status)
+            dest(index) = deserialized_val
+        end do
+
+  END FUNCTION transfer_values_from_mp
+
+end module runModule
