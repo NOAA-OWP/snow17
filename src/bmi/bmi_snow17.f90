@@ -823,6 +823,7 @@ contains
          bmi_status = BMI_FAILURE
          call write_log("snow17_var_nbytes - " // name // " not found.", LOG_LEVEL_SEVERE)
       end if
+    end if
   end function snow17_var_nbytes
 
   ! The location (node, face, edge) of the given variable.
@@ -1147,7 +1148,7 @@ contains
 !        this%model%id = src(1)
 !        bmi_status = BMI_SUCCESS
     case("serialization_create")
-         !call new_serialization_request(this%model, exec_status)
+         call new_serialization_request(this%model, exec_status)
          if (exec_status == 0) then
             bmi_status = BMI_SUCCESS
             call write_log("Serialization for state saving complete", LOG_LEVEL_INFO)
@@ -1156,7 +1157,7 @@ contains
             call write_log(" Failed to create serialized data for state saving", LOG_LEVEL_FATAL) 
          end if
       case("serialization_state")
-         !call deserialize_mp_buffer(this%model,src)
+         call deserialize_mp_buffer(this%model,src)
          bmi_status = BMI_SUCCESS
       case("serialization_free")
          if(allocated(this%model%serialization_buffer)) then
