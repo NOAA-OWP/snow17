@@ -102,6 +102,10 @@ run_util = \
         runInfoType.f90 \
         modelVarType.f90 \
         ioModule.f90 \
+        byte_utilities.f90 \
+        messagepack_value.f90 \
+        messagepack_user.f90 \
+        messagepack.f90 \
         runSnow17.f90
 
 model_run = $(patsubst %, $(share_dir)/%, $(run_util))

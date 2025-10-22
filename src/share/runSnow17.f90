@@ -259,6 +259,7 @@ contains
   SUBROUTINE new_serialization_request (model, exec_status)
     type(snow17_type), intent(inout) :: model
     integer(kind=int64) :: nh !counter for HRUs
+    real, dimension(:), allocatable :: cs_per_hru
     class(msgpack), allocatable :: mp
     class(mp_arr_type), allocatable :: mp_sub_arr
     class(mp_arr_type), allocatable :: mp_state_arr
@@ -266,14 +267,12 @@ contains
     byte, dimension(:), allocatable :: serialization_buffer
     integer(kind=int64), intent(out) :: exec_status
 
-    modelvar%cs(:,n_curr_hru)
-        allocate(this%tprev (1:namelist%n_hrus))
-
     mp = msgpack()
     mp_cs_arr = mp_arr_type(model%runinfo%n_hrus)
     do nh=1, model%runinfo%n_hrus
+        cs_per_hru = model%modelvar%cs(:,nh)
         mp_sub_arr = mp_arr_type(19)
-        mp_sub_arr = transfer_values_to_mp(model%modelvar%cs(:,nh))
+        mp_sub_arr = transfer_values_to_mp(cs_per_hru)
         mp_cs_arr%values(nh)%obj = mp_sub_arr
     end do
 
@@ -354,7 +353,7 @@ contains
             do nh=1, model%runinfo%n_hrus
               call get_arr_ref(arr_cs_hrus%values(nh)%obj,arr,status)
               if (status) then
-                modelvar%cs(:,nh) = transfer_values_from_mp(arr)
+                model%modelvar%cs(:,nh) = transfer_values_from_mp(arr)
               else
                 call write_log("Serialization using messagepack (HRU internal array) failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
               end if
