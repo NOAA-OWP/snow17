@@ -348,7 +348,7 @@ contains
         call get_arr_ref(arr_state%values(6)%obj,arr_cs_hrus,status)
         if(status) then
           !The number of elements in the serialized HRU data array for cs is expected to match the 
-          !number of HRUs. Check here and stop if they are not equal.
+          !number of HRUs. Check here and log if they are not equal.
           if (arr_cs_hrus%numelements() .NE. model%runinfo%n_hrus) then
             call write_log("The serialized data model variable 'cs' does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
             exec_status = 1
