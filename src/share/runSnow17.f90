@@ -297,9 +297,10 @@ contains
     end if
   END SUBROUTINE new_serialization_request
 
-  SUBROUTINE deserialize_mp_buffer (model, serialized_data)
+  SUBROUTINE deserialize_mp_buffer (model, serialized_data,exec_status)
     type(snow17_type), intent(inout) :: model
     integer , intent(in) :: serialized_data(:)
+    integer(kind=int64), intent(out) :: exec_status
     byte, allocatable :: serialized_data_1b(:)
     class(msgpack), allocatable :: mp
     class(mp_value_type), allocatable :: mpv
@@ -308,8 +309,9 @@ contains
     class(mp_arr_type), allocatable :: arr_cs_hrus
     class(mp_arr_type), allocatable :: arr_state
     integer(kind=int64) :: nh, yr, mo, dd, hr
-    logical :: status
+    logical :: status, allow_logging
     
+    exec_status = 0
     mp = msgpack()
     !convert integer(4) to integer(1) for messagepack
     allocate(serialized_data_1b(size(serialized_data, 1, int64)*4_int64))
@@ -331,42 +333,51 @@ contains
         call get_arr_ref(arr_state%values(5)%obj,arr_tprev_hrus,status)
         if(status) then
           !The number of elements in the serialized HRU data array for tprev is expected to match the 
-          !number of HRUs. Check here and stop if they are not equal.
+          !number of HRUs. Check here and log if they are not equal.
           if (arr_tprev_hrus%numelements() .NE. model%runinfo%n_hrus) then
-            call write_log("The serialized data for model variable tprev does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
-            stop
+            call write_log("The serialized data for model variable 'tprev' does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
+            exec_status = 1
           else
-            model%modelvar%tprev = transfer_values_from_mp(arr_tprev_hrus)
+            model%modelvar%tprev = transfer_values_from_mp(arr_tprev_hrus)            
           end if
         else
-          call write_log("Deserializing data for model variable tprev failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+          call write_log("Deserializing data for model variable 'tprev' failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+          exec_status = 1
         end if
-
+        
         call get_arr_ref(arr_state%values(6)%obj,arr_cs_hrus,status)
         if(status) then
           !The number of elements in the serialized HRU data array for cs is expected to match the 
           !number of HRUs. Check here and stop if they are not equal.
           if (arr_cs_hrus%numelements() .NE. model%runinfo%n_hrus) then
-            call write_log("The serialized data model variable cs does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
-            stop
+            call write_log("The serialized data model variable 'cs' does not contain state information for all HRUs. Please check inputs", LOG_LEVEL_FATAL)
+            exec_status = 1
           else
+            allow_logging = .TRUE. ! using this variable to supress repeated error logs in HRU loop.
             do nh=1, model%runinfo%n_hrus
               call get_arr_ref(arr_cs_hrus%values(nh)%obj,arr,status)
               if (status) then
                 model%modelvar%cs(:,nh) = transfer_values_from_mp(arr)
               else
-                call write_log("Serialization using messagepack (HRU internal array) failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+                if(allow_logging) then
+                  call write_log("Serialization using messagepack (HRU internal array) for variable 'cs' failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+                  exec_status = 1
+                  allow_logging = .FALSE.
+                end if
               end if
             end do
           end if  
         else
-          call write_log("Deserializing data for model variable cs failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+          call write_log("Deserializing data for model variable 'cs' failed!. Error:" // mp%error_message, LOG_LEVEL_FATAL)
+          exec_status = 1
         end if
       else
         call write_log("Getting an array reference to deserialized data failed! Error: " // mp%error_message, LOG_LEVEL_FATAL)  
+        exec_status = 1
       end if
     else
       call write_log("Deserialized data structure is not a messagepack array. Error: " // mp%error_message, LOG_LEVEL_FATAL)  
+      exec_status = 1
     end if
     deallocate (mpv)
     deallocate (serialized_data_1b)
