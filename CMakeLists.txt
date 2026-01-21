@@ -2,12 +2,9 @@ cmake_minimum_required(VERSION 3.12)
 enable_language( Fortran )
 add_subdirectory(../iso_c_fortran_bmi ${CMAKE_BINARY_DIR}/iso_c_bmi)
 
-set( CMAKE_VERBOSE_MAKEFILE on )
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake/")
 # Uncomment this and rebuild artifacts to enable debugging
 #set(CMAKE_BUILD_TYPE Debug)
-
 add_compile_options(
   "-Wall"
   "$<$<CONFIG:DEBUG>:-g;-fbacktrace;-fbounds-check>"
@@ -66,8 +63,7 @@ set(MODEL_SOURCE_DIR src/)
 set(BMI_SOURCE_DIR src/bmi/)
 
 file(GLOB BMI_SOURCE ${BMI_SOURCE_DIR}*.f90)
-#file( GLOB MODEL_SOURCES ${MODEL_SOURCE_DIR}/snow19/*.f ${MODEL_SOURCE_DIR}/driver/*.f90 ${MODEL_SOURCE_DIR}/share/*.f90)
-file( GLOB MODEL_SOURCES ${MODEL_SOURCE_DIR}/snow19/*.f  ${MODEL_SOURCE_DIR}/share/*.f90 ${MODEL_SOURCE_DIR}/driver/*.f90 ${CMAKE_CURRENT_LIST_DIR}/../datetime-fortran-1.7.0/src/*.f90)
+file( GLOB MODEL_SOURCES ${MODEL_SOURCE_DIR}/snow19/*.f ${MODEL_SOURCE_DIR}/driver/*.f90 ${MODEL_SOURCE_DIR}/share/*.f90)
 
 if(WIN32)
     add_library(snow17bmi ${BMI_SOURCE} )
@@ -76,19 +72,16 @@ else()
 endif()
 
 #target_include_directories(snow17bmi PUBLIC ${netCDF_INCLUDE_DIR} ${netCDF_MOD_PATH})    # netcdf not needed for this code
-#target_include_directories( snow17bmi PUBLIC ${FDATETIME_INCLUDE_DIRS} )    
+target_include_directories( snow17bmi PUBLIC )    
 
 #We know we are building this for NGEN support, so define the preprocessor directive in the compile options
 #Not sure why the global 
 target_compile_options(snow17bmi PUBLIC -cpp -ffree-line-length-none)
-#target_compile_options(snow17bmi PUBLIC -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all)
 
 ##### NETCDF #####
 #target_link_libraries( snow17bmi iso_c_bmi ${netCDF_C_LIB} ${netCDF_FORTRAN_LIB})
 ##### END NETCDF #####
-#target_link_libraries( snow17bmi PUBLIC iso_c_bmi fortran_stdlib::fortran_stdlib ${FDATETIME_LIBRARIES} )
 target_link_libraries( snow17bmi PUBLIC iso_c_bmi )
-
 set_target_properties(snow17bmi PROPERTIES VERSION ${PROJECT_VERSION})
 
 include(GNUInstallDirs)
