@@ -45,37 +45,6 @@ cmake --build cmake_build --target snow17
 
 You should now see the `cmake_build/snow17` stand-alone executable. 
 
-
-## Running in Standalone
-
-The following describes how to install the run the Sac-SMA as a standalone model.
-
-Clone repository if necessary and change to the repo root directory:
-```bash
-git clone https://github.com/NOAA-OWP/sac-sma.git
-cd sac-sma
-```
-Generate a CMake build system and directory (in the example below and those that follow, the directory is assumed to be `cmake_build` within the repo root):
-```bash
-# You can also include the '-DCMAKE_BUILD_TYPE=Debug' option if you want to build for debugging
-cmake -B cmake_build -S .
-```
-
-Note that you may need or want to specify the Fortran compiler, done by supplying a value for the `FC` variable when you generate the build directory.  There are many reasons for that:  maybe you have multiple compilers installed, or maybe your compiler isn't installed to the standard system path or using a standard name CMake will recognize.
-
-Regardless, if necessary just append `FC=<path_to_compiler>` to the rest of the command:
-
-```bash
-# Here we are manually telling CMake to use '/opt/local/bin/gfortran-mp-14' as the Fortran compiler, rather than 
-# whatever compiler it would find on its own.
-FC=/opt/local/bin/gfortran-mp-14 cmake -B cmake_build -S .
-```
-
-With the build directory generated, build the stand-alone executable:
-```bash
-cmake --build cmake_build --target snow17
-```
-
 There is a test case in the `snow17/test_cases/` directory.  To run it, first cd to the directory (`cd ../test_cases/`) and unpack the example:  `tar -xzvf ex1.tgz`.
 `cd ex1/run/` to get to the run directory and then execute the shell script (`./runSnow17.csh`) or type `../../../cmake_build/snow17 namelist.bmi.HHWM8` into your command line
 Check the example in the output folder (`cd ../output/`)
