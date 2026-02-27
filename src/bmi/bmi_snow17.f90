@@ -290,6 +290,10 @@ contains
     case('scf', 'mfmax', 'mfmin', 'uadj', 'si')       ! parameters
        grid = 0
        bmi_status = BMI_SUCCESS
+    case('adc1', 'adc2', 'adc3', 'adc4', 'adc5', 'adc6', &
+         'adc7', 'adc8', 'adc9', 'adc10', 'adc11')  ! adc parameters
+       grid = 0
+       bmi_status = BMI_SUCCESS
     case default
        grid = -1
        bmi_status = BMI_FAILURE
@@ -564,6 +568,10 @@ contains
     case('scf', 'mfmax', 'mfmin', 'uadj', 'si')       ! parameters
        type = "real"
        bmi_status = BMI_SUCCESS
+    case('adc1', 'adc2', 'adc3', 'adc4', 'adc5', 'adc6', &
+         'adc7', 'adc8', 'adc9', 'adc10', 'adc11')    ! adc parameters
+       type = "real"
+       bmi_status = BMI_SUCCESS
     case default
        type = "-"
        bmi_status = BMI_FAILURE
@@ -645,6 +653,39 @@ contains
        bmi_status = BMI_SUCCESS
     case("si")
        size = sizeof(this%model%parameters%si(1))
+       bmi_status = BMI_SUCCESS
+    case("adc1")
+       size = sizeof(this%model%parameters%adc(1,1))
+       bmi_status = BMI_SUCCESS
+    case("adc2")
+       size = sizeof(this%model%parameters%adc(2,1))
+       bmi_status = BMI_SUCCESS
+    case("adc3")
+       size = sizeof(this%model%parameters%adc(3,1))
+       bmi_status = BMI_SUCCESS
+    case("adc4")
+       size = sizeof(this%model%parameters%adc(4,1))
+       bmi_status = BMI_SUCCESS
+    case("adc5")
+       size = sizeof(this%model%parameters%adc(5,1))
+       bmi_status = BMI_SUCCESS
+    case("adc6")
+       size = sizeof(this%model%parameters%adc(6,1))
+       bmi_status = BMI_SUCCESS
+    case("adc7")
+       size = sizeof(this%model%parameters%adc(7,1))
+       bmi_status = BMI_SUCCESS
+    case("adc8")
+       size = sizeof(this%model%parameters%adc(8,1))
+       bmi_status = BMI_SUCCESS
+    case("adc9")
+       size = sizeof(this%model%parameters%adc(9,1))
+       bmi_status = BMI_SUCCESS
+    case("adc10")
+       size = sizeof(this%model%parameters%adc(10,1))
+       bmi_status = BMI_SUCCESS
+    case("adc11")
+       size = sizeof(this%model%parameters%adc(11,1))
        bmi_status = BMI_SUCCESS
     case default
        size = -1
@@ -922,6 +963,39 @@ contains
        bmi_status = BMI_SUCCESS
     case("si")
        this%model%parameters%si(:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc1")
+       this%model%parameters%adc(1,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc2")
+       this%model%parameters%adc(2,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc3")
+       this%model%parameters%adc(3,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc4")
+       this%model%parameters%adc(4,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc5")
+       this%model%parameters%adc(5,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc6")
+       this%model%parameters%adc(6,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc7")
+       this%model%parameters%adc(7,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc8")
+       this%model%parameters%adc(8,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc9")
+       this%model%parameters%adc(9,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc10")
+       this%model%parameters%adc(10,:) = src(:)
+       bmi_status = BMI_SUCCESS
+    case("adc11")
+       this%model%parameters%adc(11,:) = src(:)
        bmi_status = BMI_SUCCESS
 
     case default
