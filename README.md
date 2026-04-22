@@ -91,7 +91,7 @@ cmake --build cmake_build --target snow17 # This will build the stand-alone exec
 cmake --build cmake_build                 # This will build the stand-alone executable and the NextGen BMI module shared library
 ```
 
-Once you build the shared library, you should see the shared library in build directory, named `cmake_build/libsnow17_bmi.<version>.so` on Linux systems (on Mac, you will see `.dylib` rather than `.so`).  There will also be `cmake_build/libsnow17_bmi.so` symlink pointing to the shared library file.
+Once you build the shared library, you should see the shared library in build directory, named `cmake_build/libsnow17bmi.<version>.so` on Linux systems (on Mac, you will see `.dylib` rather than `.so`).  There will also be `cmake_build/libsnow17bmi.so` symlink pointing to the shared library file.
 
 ## Getting help
 

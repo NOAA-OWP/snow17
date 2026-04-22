@@ -34,7 +34,7 @@ endif ()
 
 #### Add variables for individual libraries that are used within the *.pc.in files
 # snow17
-set(SNOW_LIB_NAME_CMAKE snow17_bmi)
+set(SNOW_LIB_NAME_CMAKE snow17bmi)
 set(SNOW_STANDALONE_EXE_NAME snow17)
 set(SNOW_LIB_DESC_CMAKE "External Snow17 Shared Library")
 set(PARENT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src/)
