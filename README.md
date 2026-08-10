@@ -77,10 +77,10 @@ cmake -B cmake_build -DISO_C_FORTRAN_BMI_PATH=/Users/rbartel/Developer/noaa/ngen
 > The directory to use for ISO_C_FORTRAN_BMI_PATH will generally be `<path_to_your_ngen_repo>/extern/iso_c_fortran_bmi`.  It is assumed that you have already cloned the NextGen repo locally.
 
 
-With this done when the build directory is created, we will also have access to another build target:  `snow17_bmi`.   This is how we build the NextGen BMI module shared library:
+With this done when the build directory is created, we will also have access to another build target:  `snow17bmi`.   This is how we build the NextGen BMI module shared library:
 
 ```bash
-cmake --build cmake_build --target snow17_bmi
+cmake --build cmake_build --target snow17bmi
 ```
 
 > [!NOTE]
