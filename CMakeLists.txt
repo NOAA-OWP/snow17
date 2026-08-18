@@ -3,8 +3,17 @@ project(snow17 VERSION 1.0.0 DESCRIPTION "OWP snow17 Implementation")
 enable_language( Fortran )
 include(CMakeDependentOption)
 
-# Perhaps in the future set/append to CMAKE_MODULE_PATH and create a cmake directory with helper cmake stuff
-# list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/")
+set( CMAKE_VERBOSE_MAKEFILE on )
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake/")
+# Uncomment this and rebuild artifacts to enable debugging
+#set(CMAKE_BUILD_TYPE Debug)
+
+add_compile_options(
+  "-Wall"
+  "$<$<CONFIG:DEBUG>:-g;-fbacktrace;-fbounds-check>"
+)
+project(snow17 VERSION 1.0.0 DESCRIPTION "External BMI Models Shared Libraries")
 
 
 # Do this so we can default to ../iso_c_fortran_bmi for bindings if that directory exists
@@ -75,9 +84,46 @@ elseif (BMI_SHARED_LIB)
     target_link_libraries(${SNOW_LIB_NAME_CMAKE} PUBLIC iso_c_bmi)
     set_target_properties(${SNOW_LIB_NAME_CMAKE} PROPERTIES VERSION ${PROJECT_VERSION})
 
-#    include(GNUInstallDirs)
-#
-#    install(TARGETS ${SNOW_LIB_NAME_CMAKE}
-#            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-endif ()
+# find_library(_netCDF_FORTRAN_LIB netcdff REQUIRED  NO_CACHE)
+# set(netCDF_FORTRAN_LIB ${_netCDF_FORTRAN_LIB} CACHE PATH 
+# "The path to the C shared object library file, libnetcdff.so or the library name if it can be found by the linker, i.e. netcdff")
+##### END NETCDF #####
+
+set(MODEL_SOURCE_DIR src/)
+set(BMI_SOURCE_DIR src/bmi/)
+
+file(GLOB BMI_SOURCE ${BMI_SOURCE_DIR}*.f90)
+#file( GLOB MODEL_SOURCES ${MODEL_SOURCE_DIR}/snow19/*.f ${MODEL_SOURCE_DIR}/driver/*.f90 ${MODEL_SOURCE_DIR}/share/*.f90)
+file( GLOB MODEL_SOURCES ${MODEL_SOURCE_DIR}/snow19/*.f  ${MODEL_SOURCE_DIR}/share/*.f90 ${MODEL_SOURCE_DIR}/driver/*.f90 ${CMAKE_CURRENT_LIST_DIR}/../datetime-fortran-1.7.0/src/*.f90)
+
+if(WIN32)
+    add_library(snow17bmi ${BMI_SOURCE} )
+else()
+    add_library(snow17bmi SHARED ${BMI_SOURCE} ${MODEL_SOURCES} )
+endif()
+
+#target_include_directories(snow17bmi PUBLIC ${netCDF_INCLUDE_DIR} ${netCDF_MOD_PATH})    # netcdf not needed for this code
+#target_include_directories( snow17bmi PUBLIC ${FDATETIME_INCLUDE_DIRS} )    
+
+#We know we are building this for NGEN support, so define the preprocessor directive in the compile options
+#Not sure why the global 
+target_compile_options(snow17bmi PUBLIC -cpp -ffree-line-length-none)
+#target_compile_options(snow17bmi PUBLIC -O3 -fdefault-real-8 -fno-align-commons -ffree-line-length-none -cpp -fcheck=all)
+
+##### NETCDF #####
+#target_link_libraries( snow17bmi iso_c_bmi ${netCDF_C_LIB} ${netCDF_FORTRAN_LIB})
+##### END NETCDF #####
+#target_link_libraries( snow17bmi PUBLIC iso_c_bmi fortran_stdlib::fortran_stdlib ${FDATETIME_LIBRARIES} )
+target_link_libraries( snow17bmi PUBLIC iso_c_bmi )
+
+set_target_properties(snow17bmi PROPERTIES VERSION ${PROJECT_VERSION})
+
+include(GNUInstallDirs)
+
+install(TARGETS snow17bmi
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+configure_file(snow17bmi.pc.in snow17bmi.pc @ONLY)
+
+install(FILES ${CMAKE_BINARY_DIR}/snow17bmi.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
