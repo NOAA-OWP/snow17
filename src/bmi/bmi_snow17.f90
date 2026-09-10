@@ -98,7 +98,7 @@ module bmi_snow17_module
 
   ! Exchange items
   integer, parameter :: input_item_count = 2
-  integer, parameter :: output_item_count = 4
+  integer, parameter :: output_item_count = 6
   character (len=BMI_MAX_VAR_NAME), target, &
        dimension(input_item_count) :: input_items
   character (len=BMI_MAX_VAR_NAME), target, &
@@ -159,6 +159,8 @@ contains
     output_items(2) = 'sneqv'        ! snow water equivalent (mm)
     output_items(3) = 'snowh'        ! snow height (mm)
     output_items(4) = 'raim'         ! precipitation (liquid) plus snowmelt (mm/s)
+    output_items(5) = 'raim_depth'   ! timestep-integrated raim depth (mm)
+    output_items(6) = 'sneqv_kg_m2'  ! NWM-facing SNEQV mass per area (kg m-2)
 
     names => output_items
     bmi_status = BMI_SUCCESS
@@ -170,12 +172,20 @@ contains
     character (len=*), intent(in) :: config_file
     integer :: bmi_status
 
+#ifdef SNOW17_USE_EWTS
+    call payload_status(PAYLOAD_INITTING, 0.1d0, "", LOG_MODULE_ID)
+#endif
+
     if (len(config_file) > 0) then
        call initialize_from_file(this%model, config_file)
     !else
        !call initialize_from_defaults(this%model)
-     end if
-     call write_log("Initialization Done!", LOG_LEVEL_INFO)
+    end if
+    call write_log("Initialization Done!", LOG_LEVEL_INFO)
+#ifdef SNOW17_USE_EWTS
+    call payload_status(PAYLOAD_INITTED, 0.2d0, "", LOG_MODULE_ID)
+#endif
+
     bmi_status = BMI_SUCCESS
   end function snow17_initialize
 
@@ -286,7 +296,7 @@ contains
 
     select case(name)
     case('tair', 'precip', &                       ! input/output vars (can pass forc to output)
-         'precip_scf', 'sneqv', 'snowh', 'raim')   ! output vars
+         'precip_scf', 'sneqv', 'snowh', 'raim', 'raim_depth', 'sneqv_kg_m2')   ! output vars
        grid = 0
        bmi_status = BMI_SUCCESS
     case('scf', 'mfmax', 'mfmin', 'uadj', 'si', &       ! parameters
@@ -581,14 +591,10 @@ contains
     character (len=*), intent(in) :: name
     character (len=*), intent(out) :: type
     integer :: bmi_status
-    character(len=BMI_MAX_TYPE_NAME) :: ser_create = "uint64" !pads spaces upto 2048.
-    character(len=BMI_MAX_TYPE_NAME) :: ser_size = "uint64" !pads spaces upto 2048
-    character(len=BMI_MAX_TYPE_NAME) :: ser_state = "character" !pads spaces upto 2048
-    character(len=BMI_MAX_TYPE_NAME) :: ser_free = "int" !pads spaces upto 2048
 
     select case(name)
     case('tair', 'precip', &                            ! input/output vars
-         'precip_scf', 'sneqv', 'snowh', 'raim')        ! output vars
+         'precip_scf', 'sneqv', 'snowh', 'raim', 'raim_depth', 'sneqv_kg_m2')        ! output vars
        type = "real"
        bmi_status = BMI_SUCCESS
     case('scf', 'mfmax', 'mfmin', 'uadj', 'si', &       ! parameters
@@ -604,19 +610,12 @@ contains
     case('hru_id')
        type = "character"
        bmi_status = BMI_SUCCESS
-    case ('serialization_create')
-       type = ser_create
+    case ('serialization_create', "serialization_size", "serialization_state", "serialization_free")
+       type = "int"
        bmi_status = BMI_SUCCESS
-    case ('serialization_size')
-       type = ser_size
+    case ("reset_time")
+       type = "double"
        bmi_status = BMI_SUCCESS
-    case ('serialization_state')
-       type = ser_state
-       bmi_status = BMI_SUCCESS
-    case ('serialization_free')
-       type = ser_free
-       bmi_status = BMI_SUCCESS
->>>>>>> ngwpc-3.1.2.1.0
     case default
        type = "-"
        bmi_status = BMI_FAILURE
@@ -644,11 +643,17 @@ contains
     case("sneqv")
        units = "mm"
        bmi_status = BMI_SUCCESS
+    case("sneqv_kg_m2")
+       units = "kg m-2"
+       bmi_status = BMI_SUCCESS
     case("snowh")
        units = "mm"
        bmi_status = BMI_SUCCESS
     case("raim")
        units = "mm/s"
+       bmi_status = BMI_SUCCESS
+    case("raim_depth")
+       units = "mm"
        bmi_status = BMI_SUCCESS
     case("elev")
        units = "mm/s"
@@ -675,7 +680,8 @@ contains
     character (len=*), intent(in) :: name
     integer, intent(out) :: size
     integer :: bmi_status
-    
+    double precision :: d
+
     ! note: the combined variables are used assuming ngen is interacting with the
     !       catchment-averaged result if snowbands are used
 
@@ -694,10 +700,16 @@ contains
     case("sneqv")
        size = sizeof(this%model%modelvar%sneqv_comb)
        bmi_status = BMI_SUCCESS
+    case("sneqv_kg_m2")
+       size = sizeof(this%model%modelvar%sneqv_comb)
+       bmi_status = BMI_SUCCESS
     case("snowh")
        size = sizeof(this%model%modelvar%snowh_comb)
        bmi_status = BMI_SUCCESS
     case("raim")
+       size = sizeof(this%model%modelvar%raim_comb)
+       bmi_status = BMI_SUCCESS
+    case("raim_depth")
        size = sizeof(this%model%modelvar%raim_comb)
        bmi_status = BMI_SUCCESS
     case("hru_id")
@@ -781,6 +793,12 @@ contains
     case("adc11")
        size = sizeof(this%model%parameters%adc(11,:))
        bmi_status = BMI_SUCCESS
+    case("serialization_size", "serialization_create", "serialization_free", "serialization_state")
+       size = sizeof(0_int32)
+       bmi_status = BMI_SUCCESS
+    case("reset_time")
+       size = sizeof(d)
+       bmi_status = BMI_SUCCESS
     case default
        size = -1
        bmi_status = BMI_FAILURE
@@ -795,22 +813,21 @@ contains
     integer, intent(out) :: nbytes
     integer :: bmi_status
     integer :: s1, s2, s3, grid, grid_size, item_size
-    
-    if (name == "serialization_create" .or. name == "serialization_size") then
-      nbytes = storage_size(0_int64)/8 !returns size in bits. So, divide by 8 for bytes.
-      bmi_status = BMI_SUCCESS
+
+    if (name == "serialization_create" .or. name == "serialization_size" .or. name == "serialization_free" .or. name == "reset_time") then
+      bmi_status = snow17_var_itemsize(this, name, nbytes)
     else if (name == "serialization_state") then
-      if(.not.allocated(this%model%serialization_buffer) .or. size(this%model%serialization_buffer) == 0) then
+      if(allocated(this%model%serialization_buffer) .and. size(this%model%serialization_buffer) > 0) then
+         nbytes = sizeof(this%model%serialization_buffer)
+         bmi_status = BMI_SUCCESS
+      else if (this%model%serialization_size > 0) then
+         nbytes = this%model%serialization_size
+         bmi_status = BMI_SUCCESS
+      else
          nbytes = -1
          call write_log("Serialization not set yet!", LOG_LEVEL_WARNING)
          bmi_status = BMI_FAILURE
-      else
-         nbytes = size(this%model%serialization_buffer,KIND=int64)
-         bmi_status = BMI_SUCCESS
       end if
-    else if (name == "serialization_free") then 
-      nbytes = storage_size(0_int32)/8 !returns size in bits. So, divide by 8 for bytes.
-      bmi_status = BMI_SUCCESS
     else
       s1 = this%get_var_grid(name, grid)
       s2 = this%get_grid_size(grid, grid_size)
@@ -854,13 +871,21 @@ contains
 !        dest = [this%model%id]
 !        bmi_status = BMI_SUCCESS
     case("serialization_size")
-        if(.not.allocated(this%model%serialization_buffer) .or. size(this%model%serialization_buffer) == 0) then
-            call write_log("Serialization not set yet!", LOG_LEVEL_WARNING)
-            bmi_status = BMI_FAILURE
-        else
-            dest = size(this%model%serialization_buffer,KIND=int64)
-            bmi_status = BMI_SUCCESS
-         end if
+      if(allocated(this%model%serialization_buffer) .and. size(this%model%serialization_buffer) > 0) then
+         dest(:) = sizeof(this%model%serialization_buffer)
+         bmi_status = BMI_SUCCESS
+      else
+         call write_log("Serialization not set yet!", LOG_LEVEL_WARNING)
+         bmi_status = BMI_FAILURE
+      end if
+    case("serialization_state")
+      if(allocated(this%model%serialization_buffer) .and. size(this%model%serialization_buffer) > 0) then
+         dest(:) = this%model%serialization_buffer(:)
+         bmi_status = BMI_SUCCESS
+      else
+         call write_log("Serialization not set yet!", LOG_LEVEL_WARNING)
+         bmi_status = BMI_FAILURE
+      end if
     case default
        dest(:) = -1
        bmi_status = BMI_FAILURE
@@ -889,6 +914,11 @@ contains
     case("sneqv")
        dest(1) = this%model%modelvar%sneqv_comb
        bmi_status = BMI_SUCCESS
+    case("sneqv_kg_m2")
+       ! Snow-17 stores sneqv_comb as mm water-equivalent depth.
+       ! NWM expects kg m-2. Numerically, 1 mm water = 1 kg m-2.
+       dest(1) = this%model%modelvar%sneqv_comb
+       bmi_status = BMI_SUCCESS
     case("snowh")
        dest(1) = this%model%modelvar%snowh_comb
        bmi_status = BMI_SUCCESS
@@ -912,6 +942,29 @@ contains
        else
           bmi_status = BMI_SUCCESS
        end if
+
+    case("raim_depth")
+        ! Snow-17 stores raim_comb as a rate in mm/s.
+        ! NWM ACSNOW expects timestep-integrated depth in mm.
+        dest(1) = this%model%modelvar%raim_comb * real(this%model%runinfo%dt)
+
+        ! Match original raim behavior: judge small negative noise using the rate value.
+        if (this%model%modelvar%raim_comb < 0.0 .and. this%model%modelvar%raim_comb > -1.0e-6) then
+            dest(1) = 0.0
+            write(msg, '(A,ES12.5,A)') "snow17_get_float - 'raim_depth' is negligibly negative from raim rate (", &
+                                    this%model%modelvar%raim_comb, " mm/s), set to 0.0 mm"
+            call write_log(msg, LOG_LEVEL_INFO)
+            bmi_status = BMI_SUCCESS
+
+        else if (this%model%modelvar%raim_comb <= -1.0e-6) then
+            write(msg, '(A,ES12.5,A)') "snow17_get_float - 'raim_depth' is invalid from raim rate (", &
+                                    this%model%modelvar%raim_comb, " mm/s), must be non-negative."
+            call write_log(msg, LOG_LEVEL_SEVERE)
+            bmi_status = BMI_FAILURE
+
+        else
+            bmi_status = BMI_SUCCESS
+        end if
 
     !case("hru_id")
     !   dest = [this%model%parameters%hru_id]
@@ -1034,9 +1087,6 @@ contains
  !==================== UPDATE IMPLEMENTATION IF NECESSARY FOR INTEGER VARS =================
 
      select case(name)
-     case("serialization_state")
-          dest_ptr = this%model%serialization_buffer
-          bmi_status = BMI_SUCCESS
      case default
         bmi_status = BMI_FAILURE
         call write_log("snow17_get_ptr_int - " // name // " not found.", LOG_LEVEL_SEVERE)
@@ -1155,8 +1205,9 @@ contains
             call write_log("Serialization for state saving complete", LOG_LEVEL_DEBUG)
          else
             bmi_status = BMI_FAILURE
-            call write_log(" Failed to create serialized data for state saving", LOG_LEVEL_FATAL) 
+            call write_log(" Failed to create serialized data for state saving", LOG_LEVEL_FATAL)
          end if
+         this%model%serialization_size = -1
       case("serialization_state")
          call deserialize_mp_buffer(this%model,src, exec_status)
          if (exec_status == 0) then
@@ -1164,12 +1215,17 @@ contains
             call write_log("Deserialization for state saving complete", LOG_LEVEL_DEBUG)
          else
             bmi_status = BMI_FAILURE
-            call write_log(" Failed to deserialize state saving data", LOG_LEVEL_FATAL) 
+            call write_log(" Failed to deserialize state saving data", LOG_LEVEL_FATAL)
          end if
+         this%model%serialization_size = -1
       case("serialization_free")
          if(allocated(this%model%serialization_buffer)) then
             deallocate(this%model%serialization_buffer)
          end if
+         bmi_status = BMI_SUCCESS
+         this%model%serialization_size = -1
+      case("serialization_size")
+         this%model%serialization_size = src(1)
          bmi_status = BMI_SUCCESS
       case default
        bmi_status = BMI_FAILURE
@@ -1182,7 +1238,7 @@ contains
     class (bmi_snow17), intent(inout) :: this
     character (len=*), intent(in) :: name
     real, intent(in) :: src(:)
-    integer :: bmi_status    
+    integer :: bmi_status
 
     ! NOTE: if run in a vector (snowband mode), this code will need revising
     !       to set the basin average (ie, restart capability)
@@ -1206,6 +1262,9 @@ contains
     case("raim")
        this%model%modelvar%raim(1) = src(1)
        bmi_status = BMI_SUCCESS
+    !case("hru_id")
+    !   this%model%parameters%hru_id = src(1)
+    !   bmi_status = BMI_SUCCESS
     case("scf")
        this%model%parameters%scf(:) = src(:)
        bmi_status = BMI_SUCCESS
@@ -1298,10 +1357,20 @@ contains
     character (len=*), intent(in) :: name
     double precision, intent(in) :: src(:)
     integer :: bmi_status
+    integer(kind=int64) :: exec_status
 
     !==================== UPDATE IMPLEMENTATION IF NECESSARY FOR DOUBLE VARS =================
 
     select case(name)
+    case("reset_time")
+      call reset_model_time(this%model, exec_status)
+      if (exec_status == 0) then
+         bmi_status = BMI_SUCCESS
+         call write_log("Time variables reset successfully for state restoring", LOG_LEVEL_DEBUG)
+      else
+         bmi_status = BMI_FAILURE
+         call write_log(" Failed to reset time variables for state restoring", LOG_LEVEL_FATAL)
+      end if
     case default
        bmi_status = BMI_FAILURE
        call write_log("snow17_set_double - " // name // " not found.", LOG_LEVEL_SEVERE)

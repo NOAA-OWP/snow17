@@ -5,6 +5,8 @@ include(CMakeDependentOption)
 
 set( CMAKE_VERBOSE_MAKEFILE on )
 
+set( CMAKE_VERBOSE_MAKEFILE on )
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../cmake/")
 # Uncomment this and rebuild artifacts to enable debugging
 #set(CMAKE_BUILD_TYPE Debug)
@@ -117,6 +119,25 @@ target_compile_options(snow17bmi PUBLIC -cpp -ffree-line-length-none)
 target_link_libraries( snow17bmi PUBLIC iso_c_bmi )
 
 set_target_properties(snow17bmi PROPERTIES VERSION ${PROJECT_VERSION})
+
+option(USE_EWTS "Build SNOW17 with EWTS logging" ON)
+message("-- SNOW17 CMakeLists USE_EWTS = ${USE_EWTS}")
+if(USE_EWTS)
+    message("-- SNOW17 compiled with EWTS logging")
+
+    # --- EWTS (installed from nwm-ewts) ---
+    find_package(ewts CONFIG REQUIRED)
+
+    # Always use EWTS runtime logger for Fortran
+    target_link_libraries(snow17bmi PRIVATE ewts::ewts_fortran)
+
+    # Built with ngen bridge
+    target_link_libraries(snow17bmi PRIVATE ewts::ewts_ngen_bridge)
+    target_compile_definitions(snow17bmi PRIVATE SNOW17_USE_EWTS)
+else()
+    message("-- SNOW17 compiled with stdout fallback logging")
+endif()
+
 
 include(GNUInstallDirs)
 
