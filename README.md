@@ -7,7 +7,7 @@ forecasting.  It is a temperature-index model that was first described in Anders
 the [Next Generation Water Resources Modeling Framework](https://github.com/NOAA-OWP/ngen) (NextGen). 
 
   - **Technology stack**: The model code is written in Fortran with a driver that incorporates [Basic Model Interface](https://csdms.colorado.edu/wiki/BMI) (BMI) commands to enable Snow17 to be run in standalone mode or as a module within the NextGen framework (or other BMI-based systems). It has been compiled using GNU, PGI, and Intel compilers. 
-  - **Status**: Beta (runs but has not been extensively tested; validates against the orginal repository version listed below, which has been extensively used)
+  - **Status**: Beta (runs but has not been extensively tested; validates against the original repository version listed below, which has been extensively used)
   - **Links**:  This code was adapted from source code included in https://github.com/NCAR/NWS_hydro_models -- a version used in federally funded streamflow forecasting research at NCAR. The original source code for that effort was obtained from the NWS Office of Hydrology around 2013. The code has since been copied and adapted into other research repositories. 
 
 ## Dependencies
@@ -15,7 +15,7 @@ the [Next Generation Water Resources Modeling Framework](https://github.com/NOAA
 - NextGen ISO C Fortran BMI library (optional)
 
 ## Running in Standalone
-The following describes how to install the run snow17 as a standalone model.
+The following describes how to install and run snow17 as a standalone model.
 
 Clone repository if necessary and change to the repo root directory:
 ```bash
