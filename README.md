@@ -52,7 +52,7 @@ Check the example in the output folder (`cd ../output/`)
 
 ## Running in [Ngen](https://github.com/NOAA-OWP/ngen)
 
-The following are instructions for building the Sac-SMA BMI module shared library.  In particular, this is necessary to run the Sac-SMA model in the [Next Generation Water Resources Modeling Framework](https://github.com/NOAA-OWP/ngen).
+The following are instructions for building the Snow17 BMI module shared library.  In particular, this is necessary to run the Snow17 model in the [Next Generation Water Resources Modeling Framework](https://github.com/NOAA-OWP/ngen).
 
 
 As described above for stand-alone builds, clone the repo if necessary and change into the repo root directory.
