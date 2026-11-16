@@ -95,9 +95,41 @@ cmake --build cmake_build                 # This will build the stand-alone exec
 
 Once you build the shared library, you should see the shared library in build directory, named `cmake_build/libsnow17bmi.<version>.so` on Linux systems (on Mac, you will see `.dylib` rather than `.so`).  There will also be `cmake_build/libsnow17bmi.so` symlink pointing to the shared library file.
 
+## Namelist
+
+The namelist file configures a run. The standalone executable reads the file named on the command line, or `namelist.input` in the current directory if none is given. In NextGen, it is the `init_config` of the Snow17 formulation in the realization file. It is a Fortran namelist: it starts with `&SNOW17_CONTROL`, ends with `/`, and text after `!` is a comment. Strings should be quoted, including `start_datehr` and `end_datehr` (`start_datehr = "2015120100"`). Unquoted strings work for older compilers but quoted always works. Example namelists are included in the test case (`ex1/run/namelist.bmi.HHWM8` in `test_cases/ex1.tgz`) and in [configs/snow17-init-cat-27.namelist.input](configs/snow17-init-cat-27.namelist.input) for NextGen.
+
+In NextGen, the framework supplies the forcing and handles the outputs, so the forcing and output settings are not used.
+
+Setting | Description | Standalone | NextGen
+--------|-------------|------------|--------
+main_id | Basin label or gage ID (up to 20 characters) | Names the basin-average output file, `<output_root><main_id>.txt` | Not used
+n_hrus | Number of HRUs | Any number | Must be 1 hru per NextGen divide
+forcing_root | Path prefix for the forcing files | Reads each HRU's forcing from `<forcing_root><hru_id>.csv`<sup>*</sup> | Not used
+output_root | Path prefix for the output files | Used for all output files | Not used
+output_hrus | Also write output for each HRU (1 = yes, 0 = no) | Creates `<output_root><hru_id>.txt` for each HRU. Rows are only written when `n_hrus` > 1 | Not used
+snow17_param_file | Path to the [parameter file](#parameters) | Used | Used
+start_datehr | Date and hour of the first timestep, as `"YYYYMMDDHH"` | Forcing is read from the row with this date | Set it to the realization's `start_time`<sup>§</sup>
+end_datehr | Date and hour of the last timestep, as `"YYYYMMDDHH"` | Last forcing row read | If `allow_exceed_end_time` is false in the realization, it must be at least one timestep after the realization's `end_time`
+model_timestep | Timestep in seconds. Must be a multiple of 3600 | Must match the forcing interval | Must match the realization timestep
+warm_start_run | Start from state files (1 = yes, 0 = no)<sup>†</sup> | Reads `<snow_state_in_root><hru_id>.txt` | Same as standalone
+write_states | Write state files at every timestep (1 = yes, 0 = no)<sup>‡</sup> | Writes `<snow_state_out_root><hru_id>.txt` | Same as standalone
+snow_state_in_root | Path prefix for the input state files | Used if `warm_start_run` = 1 | Same as standalone
+snow_state_out_root | Path prefix for the output state files | Used if `write_states` = 1 | Same as standalone
+
+<sup>*</sup> Standalone forcing files have one header line, then one row per timestep with the columns year, month, day, hour, precipitation (mm s<sup>-1</sup>) and air temperature (°C), separated by commas or spaces. The columns must be in this order; the header names are not read. Rows must run consecutively from `start_datehr` through `end_datehr`, because the run stops if a row's date does not match the model time. If a file has no row for `start_datehr`, the run currently hangs instead of stopping with an error.
+
+<sup>†</sup> A state file has one header line, then one row per timestep: the date, `tprev` and the 19 carryover states `cs1`–`cs19`, as they were at the end of that timestep. A warm start reads the row dated one timestep before `start_datehr`, so a run that continues an earlier one starts one timestep after the earlier run's `end_datehr`. A row dated `FcstDate` matches any start date, for forecast (ESP) initialization.
+
+<sup>‡</sup> `warm_start_run` and `write_states` cannot both be 1. If they are, `write_states` is set to 0.
+
+<sup>§</sup> NextGen supplies forcing by its own clock, so `start_datehr` does not change which forcing the model receives. It sets the model's calendar: the day of year for the seasonal melt factor, the dates written to state files and the date a warm start looks for.
+
+In NextGen, state files are named by the `hru_id` in the parameter file. Catchments that share both a parameter file and a `snow_state_out_root` write to the same state file, so give each catchment its own `hru_id` or its own `snow_state_out_root`.
+
 ## Parameters
 
-The tables below list the 26 lines required in the parameter file (the file named by `snow17_param_file` in the namelist): 4 HRU metadata lines, 11 model parameters and 11 areal depletion curve ordinates. Each line holds a parameter name followed by one value per HRU, separated by spaces (not tabs). Lines can be in any order, but names are case-sensitive. An example parameter file is included in the test case (`ex1/input/params/snow17_params.HHWM8.txt` in `test_cases/ex1.tgz`).
+The tables below list the 26 lines required in the parameter file (the file named by `snow17_param_file` in the [namelist](#namelist)): 4 HRU metadata lines, 11 model parameters and 11 areal depletion curve ordinates. Each line holds a parameter name followed by one value per HRU, separated by spaces (not tabs). Lines can be in any order, but names are case-sensitive. An example parameter file is included in the test case (`ex1/input/params/snow17_params.HHWM8.txt` in `test_cases/ex1.tgz`).
 
 The parameters are split into major parameters, which are usually calibrated, and minor parameters, which are usually set from climate and site conditions and normally not calibrated [[3]](#ref-anderson-2006). In NextGen, the major parameters can also be set with `model_params` in the realization file, which overrides the parameter file. The minor parameters and HRU metadata can only be set in the parameter file. See [[3]](#ref-anderson-2006) for additional details about the conceptual meaning of each parameter.
 

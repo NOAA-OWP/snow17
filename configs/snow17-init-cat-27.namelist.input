@@ -10,8 +10,8 @@ snow17_param_file   = "extern/snow17/test_cases/ex1/input/params/snow17_params.H
 output_hrus         = 1            ! output HRU results? (1=yes; 0=no)
 
 ! -- run period information
-start_datehr        = 2015120101   ! start date time, backward looking (check)
-end_datehr          = 2015123023   ! end date time
+start_datehr        = "2015120100" ! first timestep; same as the realization start_time
+end_datehr          = "2015123023" ! last timestep
 model_timestep      = 3600        ! in seconds (86400 seconds = 1 day)
 
 ! -- state start/write flags and files
