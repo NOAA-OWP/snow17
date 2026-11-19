@@ -97,14 +97,14 @@ Once you build the shared library, you should see the shared library in build di
 
 ## Namelist
 
-The namelist file configures a run. The standalone executable reads the file named on the command line, or `namelist.input` in the current directory if none is given. In NextGen, it is the `init_config` of the Snow17 formulation in the realization file. It is a Fortran namelist: it starts with `&SNOW17_CONTROL`, ends with `/`, and text after `!` is a comment. Strings should be quoted, including `start_datehr` and `end_datehr` (`start_datehr = "2015120100"`). Unquoted strings work for older compilers but quoted always works. Example namelists are included in the test case (`ex1/run/namelist.bmi.HHWM8` in `test_cases/ex1.tgz`) and in [configs/snow17-init-cat-27.namelist.input](configs/snow17-init-cat-27.namelist.input) for NextGen.
+The namelist file configures a run. The standalone executable reads the file named on the command line, or `namelist.input` in the current directory if none is given. In NextGen, it is the `init_config` of the Snow17 formulation in the realization file. It is a Fortran namelist: it starts with `&SNOW17_CONTROL`, ends with `/`, and text after `!` is a comment. Quote all strings, including `start_datehr` and `end_datehr` (`start_datehr = "2015120100"`). Example namelists are included in the test case (`ex1/run/namelist.bmi.HHWM8` in `test_cases/ex1.tgz`) and in [configs/snow17-init-cat-27.namelist.input](configs/snow17-init-cat-27.namelist.input) for NextGen. The `ex1` example namelist has unquoted dates, which gfortran 16 rejects, so add quotes if needed.
 
 In NextGen, the framework supplies the forcing and handles the outputs, so the forcing and output settings are not used.
 
 Setting | Description | Standalone | NextGen
 --------|-------------|------------|--------
 main_id | Basin label or gage ID (up to 20 characters) | Names the basin-average output file, `<output_root><main_id>.txt` | Not used
-n_hrus | Number of HRUs | Any number | Must be 1 hru per NextGen divide
+n_hrus | Number of HRUs | Any number | Must be 1
 forcing_root | Path prefix for the forcing files | Reads each HRU's forcing from `<forcing_root><hru_id>.csv`<sup>*</sup> | Not used
 output_root | Path prefix for the output files | Used for all output files | Not used
 output_hrus | Also write output for each HRU (1 = yes, 0 = no) | Creates `<output_root><hru_id>.txt` for each HRU. Rows are only written when `n_hrus` > 1 | Not used
@@ -119,13 +119,11 @@ snow_state_out_root | Path prefix for the output state files | Used if `write_st
 
 <sup>*</sup> Standalone forcing files have one header line, then one row per timestep with the columns year, month, day, hour, precipitation (mm s<sup>-1</sup>) and air temperature (°C), separated by commas or spaces. The columns must be in this order; the header names are not read. Rows must run consecutively from `start_datehr` through `end_datehr`, because the run stops if a row's date does not match the model time. If a file has no row for `start_datehr`, the run currently hangs instead of stopping with an error.
 
-<sup>†</sup> A state file has one header line, then one row per timestep: the date, `tprev` and the 19 carryover states `cs1`–`cs19`, as they were at the end of that timestep. A warm start reads the row dated one timestep before `start_datehr`, so a run that continues an earlier one starts one timestep after the earlier run's `end_datehr`. A row dated `FcstDate` matches any start date, for forecast (ESP) initialization.
+<sup>†</sup> A state file has one header line, then one row per timestep: the date, `tprev` and the 19 carryover states `cs1`–`cs19`, as they were at the end of that timestep. To continue an earlier run, set `start_datehr` to one timestep after the earlier run's `end_datehr`. A row dated `FcstDate` matches any start date, for forecast (ESP) initialization.
 
 <sup>‡</sup> `warm_start_run` and `write_states` cannot both be 1. If they are, `write_states` is set to 0.
 
 <sup>§</sup> NextGen supplies forcing by its own clock, so `start_datehr` does not change which forcing the model receives. It sets the model's calendar: the day of year for the seasonal melt factor, the dates written to state files and the date a warm start looks for.
-
-In NextGen, state files are named by the `hru_id` in the parameter file. Catchments that share both a parameter file and a `snow_state_out_root` write to the same state file, so give each catchment its own `hru_id` or its own `snow_state_out_root`.
 
 ## Parameters
 
@@ -179,7 +177,7 @@ daygm | Constant daily melt at the snow-soil interface (0.0 for frozen soils, 0.
 
 The areal depletion curve (`adc1`–`adc11`) gives the fraction of the area covered by snow as a function of the ratio of the mean areal water equivalent to the areal index. The areal index is the smaller of `si` and the maximum water equivalent of the accumulation period [[3]](#ref-anderson-2006). The ordinates should not decrease. The adc ranges are derived from Figure 7-4-4 of [[2]](#ref-anderson-2002) and from [[4]](#ref-newman-2015). They capture the range recommended by Anderson, but wider ranges may be needed in some locations. Set the adc values a priori when data is available [[4]](#ref-newman-2015).
 
-The melt factors `mfmax`, `mfmin` and `nmf` and the wind function `uadj` are always per 6 hours, and `daygm` is always per day. The model scales them, and `tipm`, to the timestep, so no unit conversion is needed when `model_timestep` changes. `model_timestep` must be a multiple of 3600 s. Calibrated values may still not transfer exactly between runs with different timesteps.
+The melt factors `mfmax`, `mfmin` and `nmf` and the wind function `uadj` are always per 6 hours, and `daygm` is always per day. The model scales them, and `tipm`, to the timestep, so no unit conversion is needed when `model_timestep` changes.
 
 ## Getting help
 
@@ -202,7 +200,7 @@ We encourage community involvement in code development. For more info, please ch
 If you wish to use or adapt the code in this repository, please make sure that your new repository credits this one as the original source of the code. 
 
 ### References
-1. <a id="ref-anderson-1973"></a>Anderson, E. A., 1973: National Weather Service River Forecast System-Snow Accumulation and Ablation Model. NOAA Tech. Memo. NWS Hydro-17, U.S. National Weather Service. [Available from Office of Hydrologic Development, NOAA/NWS, 1325 East–West Highway, Silver Spring, MD 20910.]
+1. <a id="ref-anderson-1973"></a>Anderson, E. A., 1973: National Weather Service River Forecast System-Snow Accumulation and Ablation Model. NOAA Tech. Memo. NWS Hydro-17, U.S. National Weather Service.
 2. <a id="ref-anderson-2002"></a>Anderson, E.A. (2002). Calibration of conceptual hydrologic models for use in river forecasting. NOAA Technical Report, NWS 45, Hydrology Laboratory, Silver Spring, MD. https://www.weather.gov/media/owp/oh/hrl/docs/1_Anderson_CalbManual.pdf
 3. <a id="ref-anderson-2006"></a>Anderson, E.A. (2006). Snow Accumulation and Ablation Model – SNOW-17. https://www.weather.gov/media/owp/oh/hrl/docs/22snow17.pdf
 4. <a id="ref-newman-2015"></a>Newman, A. J., Clark, M. P., Sampson, K., Wood, A., Hay, L. E., Bock, A., Viger, R. J., Blodgett, D., Brekke, L., Arnold, J. R., Hopson, T., and Duan, Q.: Development of a large-sample watershed-scale hydrometeorological data set for the contiguous USA: data set characteristics and assessment of regional variability in hydrologic model performance, Hydrol. Earth Syst. Sci., 19, 209–223, https://doi.org/10.5194/hess-19-209-2015, 2015.
