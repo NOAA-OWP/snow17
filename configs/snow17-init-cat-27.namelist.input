@@ -6,12 +6,12 @@ main_id             = "cat-27"     ! basin label or gage id
 n_hrus              = 1            ! number of sub-areas in model
 forcing_root        = "extern/snow17/test_cases/hf_catchment/input/forcing/forcing.snow17bmi."
 output_root         = "data/output/output.snow17bmi."
-snow17_param_file   = "extern/snow17/test_cases/ex1/input/params/snow17_params.HHWM8.txt"
+snow17_param_file   = "extern/snow17/test_cases/ex1/input/params/snow17_params.HHWM8.txt" ! 2-HRU file; with n_hrus = 1 only the first value on each line (HHWM8IL) is used
 output_hrus         = 1            ! output HRU results? (1=yes; 0=no)
 
 ! -- run period information
-start_datehr        = 2015120101   ! start date time, backward looking (check)
-end_datehr          = 2015123023   ! end date time
+start_datehr        = "2015120100" ! first timestep; same as the realization start_time
+end_datehr          = "2015123023" ! last timestep
 model_timestep      = 3600        ! in seconds (86400 seconds = 1 day)
 
 ! -- state start/write flags and files
