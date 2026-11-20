@@ -111,7 +111,7 @@ output_hrus | Also write output for each HRU (1 = yes, 0 = no) | Creates `<outpu
 snow17_param_file | Path to the [parameter file](#parameters) | Used | Used
 start_datehr | Date and hour of the first timestep, as `"YYYYMMDDHH"` | Forcing is read from the row with this date | Set it to the realization's `start_time`<sup>§</sup>
 end_datehr | Date and hour of the last timestep, as `"YYYYMMDDHH"` | Last forcing row read | If `allow_exceed_end_time` is false in the realization, it must be at least one timestep after the realization's `end_time`
-model_timestep | Timestep in seconds. Must be a multiple of 3600 | Must match the forcing interval | Must match the realization timestep
+model_timestep | Timestep in seconds. Must be a multiple of 3600 | Must match the forcing interval | Must equal the surface layer's `time_step` in the realization, which is 3600 s unless set in a `layers` block: `"layers": [{"name": "surface layer", "id": 0, "time_step": <model_timestep>}]`. The realization's `output_interval` doesn't set it.
 warm_start_run | Start from state files (1 = yes, 0 = no)<sup>†</sup> | Reads `<snow_state_in_root><hru_id>.txt` | Same as standalone
 write_states | Write state files at every timestep (1 = yes, 0 = no)<sup>‡</sup> | Writes `<snow_state_out_root><hru_id>.txt` | Same as standalone
 snow_state_in_root | Path prefix for the input state files | Used if `warm_start_run` = 1 | Same as standalone
